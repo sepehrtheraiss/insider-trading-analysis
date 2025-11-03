@@ -1,10 +1,10 @@
 import pandas as pd
 
 def attach_mapping(df: pd.DataFrame, mapping: pd.DataFrame) -> pd.DataFrame:
-    if df.empty:
-        return df.copy()
-    m = mapping.rename(columns={"cik":"issuerCik"})
-    out = df.merge(m, on="issuerTicker", how="left", suffixes=("",""))
+    #if df.empty:
+    #    return df.copy()
+    #m = mapping.rename(columns={"cik":"issuerCik"})
+    out = df.merge(mapping, on="issuerTicker", how="left", suffixes=(None,None))
     return out
 
 def filter_valid_exchanges(df: pd.DataFrame) -> pd.DataFrame:
