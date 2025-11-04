@@ -1,6 +1,7 @@
 import argparse
-from services.sec_client import SecClient
-from services.config import Config, BASE_URL, TIMEOUT
+from api.client.services.core_service import SecClient
+#from services.sec_client import SecClient
+from config import Config, BASE_URL, TIMEOUT
 from controllers.flatten import normalize_transactions
 from controllers.clean import attach_mapping, filter_valid_exchanges, remove_price_outliers, finalize
 from models.db import csv
@@ -14,14 +15,14 @@ def main():
     args = ap.parse_args()
     conf = Config()
     db = csv('test.csv')
-    sec = SecClient(BASE_URL, conf.sec_api_key, TIMEOUT)
-    raw_iter = sec.api_client.fetch_transactions(args.query, start=args.start, end=args.end)
+    sec = SecClient(BASE_URL, conf.sec_api_key)
+    raw_iter = sec.fetch_insider_transactions(args.query, start=args.start, end=args.end)
     df = normalize_transactions(raw_iter)
     if df.empty:
         print("No transactions returned.")
         return
 
-    mapping = sec.http_client.load_exchange_mapping()
+    mapping = sec.load_exchange_mapping()
     filter_mapping = mapping[mapping['issuerTicker'] == 'TSLA']
     #print('mapping content: ', mapping)
     df = attach_mapping(df, filter_mapping)
