@@ -1,5 +1,4 @@
 from typing import Dict, Any, Iterable
-#from ...config import DEFAULT_PAGE_SIZE # needs work
 import time
 import pandas as pd
 
@@ -8,9 +7,9 @@ from ..http_client import HttpClient
 
 DEFAULT_PAGE_SIZE = 50
 class SecClient:
-    def __init__(self, base_url:str='', api_key:str=''):
-        self._libClient = LibraryClient(api_key)
-        self._httpClient = HttpClient(base_url, api_key)
+    def __init__(self, base_url:str='', api_key:str='', lib_client=None, http_client=None):
+        self._libClient = lib_client or LibraryClient(api_key)
+        self._httpClient = http_client or HttpClient(base_url, api_key)
 
     def fetch_insider_transactions(
         self,
@@ -43,9 +42,18 @@ class SecClient:
                     "size": str(size),
                     "sort": sort,
                 }
-                # returns dict with 'transactions'
+                # returns dict_keys(['total', 'transactions']) 
+                # total -> <class 'dict'>
+                # transactions -> <class 'list'> -> <class 'dict'>
+                '''
+                dict_keys(['id', 'accessionNo', 'filedAt', 'schemaVersion',
+                           'documentType', 'periodOfReport', 'notSubjectToSection16',
+                           'issuer', 'reportingOwner', 'nonDerivativeTable',
+                           'derivativeTable', 'footnotes', 'ownerSignatureName',
+                           'ownerSignatureNameDate'])
+                '''
                 data = self._libClient.fetch('InsiderTradingApi', 'get_data',payload)
-                txs = data.get("transactions", []) #or [] # what ?
+                txs = data.get("transactions", [])
                 if not txs:
                     break
                 for t in txs:
@@ -64,6 +72,9 @@ class SecClient:
         frames = []
         for ex in exchanges:
             endpoint = MAPPING_ENDPOINT.format(exchange=ex,key=self._httpClient.api_key)
+            # dict_keys(['name', 'ticker', 'cik', 'cusip', 'exchange', 'isDelisted', 'category',
+            #            'sector', 'industry', 'sic', 'sicSector', 'sicIndustry', 'famaSector',
+            #            'famaIndustry', 'currency', 'location', 'id'])
             data = self._httpClient.fetch(endpoint)
             df = pd.DataFrame(data)
             if df.empty:

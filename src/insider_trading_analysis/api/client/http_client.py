@@ -6,13 +6,13 @@ from .decorators.backoff import backoff_retry
 class HttpClient(BaseAPI):
     """HTTP API client with rate limit & retry decorators."""
 
-    def __init__(self, base_url, token=None, proxy=None, rate=30, per=60):
-        super().__init__(token, proxy)
+    def __init__(self, base_url, api_key, token=None, proxy=None, rate=30, per=60):
+        super().__init__(api_key, proxy)
         self.base_url = base_url.rstrip('/')
         self.rate = rate
         self.per = per
         self.session = None
-        self.token = self.api_key
+        self.token = token
         self._configure()
 
     def _configure(self):
