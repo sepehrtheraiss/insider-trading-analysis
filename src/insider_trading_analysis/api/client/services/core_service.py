@@ -63,7 +63,7 @@ class SecClient:
                 time.sleep(sleep_seconds)
 
      
-    def load_exchange_mapping(self, exchanges=( "nasdaq", "nyse" )) -> pd.DataFrame:
+    def fetch_exchange_mapping(self, exchanges=( "nasdaq", "nyse" )) -> pd.DataFrame:
         """
         Fetch company metadata (ticker, sector, industry, exchange) from SEC-API Mapping endpoints.
         Returns a DataFrame with columns: issuerTicker, cik, exchange, sector, industry, category, name

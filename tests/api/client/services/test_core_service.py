@@ -29,6 +29,6 @@ def test_fetch_insider_transactions_responses(sec_client, lib_fake_client, mock_
 
 
 def test_load_exchange_mapping(sec_client):
-    res: pd.DataFrame = sec_client.load_exchange_mapping(exchanges=("nasdaq"))
+    res: pd.DataFrame = sec_client.fetch_exchange_mapping(exchanges=("nasdaq"))
     expected_columns = ["issuerTicker","cik","exchange","sector","industry","category","name"]
     assert all(col in res.columns for col in expected_columns)

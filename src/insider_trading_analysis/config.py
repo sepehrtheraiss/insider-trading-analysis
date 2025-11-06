@@ -18,7 +18,11 @@ class Config:
     def __init__(self): ...
 
     @property
+    def base_url(self) -> str:
+        return BASE_URL
+    @property
     def sec_api_key(self) -> str:
         if not SEC_API_KEY:
             raise ConfigError("Missing SEC_API_KEY environment variable. Set it before running.")
         return SEC_API_KEY
+    

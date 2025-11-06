@@ -1,10 +1,6 @@
 import argparse
-from api.client.services.core_service import SecClient
-#from services.sec_client import SecClient
-from config import Config, BASE_URL, TIMEOUT
-from controllers.flatten import normalize_transactions
-from controllers.clean import attach_mapping, filter_valid_exchanges, remove_price_outliers, finalize
-from models.db import csv
+from config import Config
+from controllers.core_controller import CoreController
 
 def main():
     ap = argparse.ArgumentParser(description="Build insider trades dataset via SEC-API")
@@ -14,26 +10,9 @@ def main():
     ap.add_argument("-o","--output", default="out/insider_trades.csv", help="CSV output file")
     args = ap.parse_args()
     conf = Config()
-    db = csv('test.csv')
-    sec = SecClient(BASE_URL, conf.sec_api_key)
-    raw_iter = sec.fetch_insider_transactions(args.query, start=args.start, end=args.end)
-    df = normalize_transactions(raw_iter)
-    if df.empty:
-        print("No transactions returned.")
-        return
-
-    mapping = sec.load_exchange_mapping()
-    filter_mapping = mapping[mapping['issuerTicker'] == 'TSLA']
-    #print('mapping content: ', mapping)
-    df = attach_mapping(df, filter_mapping)
-    df = filter_valid_exchanges(df)
-    df = remove_price_outliers(df)
-    df = finalize(df)
-    df.sort_values(["filedAt","issuerTicker"], ascending=[False, True], inplace=True)
-    print(f"Rows after cleaning: {len(df)}")
-    out = args.output
-    df.to_csv(out, index=False)
-    print(f"Wrote {out}")
+    ctrl = CoreController(conf)
+    ctrl.run_cmd(args)
+    
 
 if __name__ == "__main__":
     main()
