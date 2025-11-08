@@ -46,7 +46,11 @@ def normalize_transactions(transactions: Iterable[Dict[str, Any]]) -> pd.DataFra
                 ad = amts.get("acquiredDisposedCode")
                 tx_date = row.get("transactionDate")
                 post_sh = post.get("sharesOwnedFollowingTransaction")
-                total_value = float(shares) * float(price) if shares is not None and price is not None else None
+                # for case of shares being a str
+                try:
+                    total_value = float(shares) * float(price) if shares is not None and price is not None else None
+                except:
+                    total_value = None
 
                 records.append({
                     "filedAt": filed_at,
