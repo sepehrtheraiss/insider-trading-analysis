@@ -6,7 +6,7 @@ import matplotlib.dates as mdates
 from utils.utils import millions_formatter
 
 
-def bar_by_code(df: pd.DataFrame, out_path: str) -> bool:
+def savefig_bar_by_code(df: pd.DataFrame, out_path: str) -> bool:
     if df.empty:
         return False 
     plt.figure()
@@ -20,7 +20,7 @@ def bar_by_code(df: pd.DataFrame, out_path: str) -> bool:
     plt.close()
     return True 
 
-def heatmap_sector_year(pivot: pd.DataFrame, out_path: str) -> bool:
+def savefig_heatmap_sector_year(pivot: pd.DataFrame, out_path: str) -> bool:
     if pivot.empty:
         return False 
     plt.figure()
@@ -56,7 +56,7 @@ def plot_annual_graph(df):
   plt.show()
 
 # Distribution of Transaction Codes
-def distribution_trans_codes(df):
+def plot_distribution_trans_codes(df):
     transaction_code = df.groupby(["acquiredDisposed", "code"])['totalValue'].sum() 
     ax_codes = transaction_code.plot.barh(figsize=(10,8))
     ax_codes.xaxis.set_major_formatter(matplotlib.ticker.FuncFormatter(millions_formatter))
@@ -68,7 +68,7 @@ def distribution_trans_codes(df):
     plt.show()
 
 # N companies bought/sold in a period
-def n_most_companies_bs(acquired_by_ticker, disposed_by_ticker, year, n=15):
+def plot_n_most_companies_bs(acquired_by_ticker, disposed_by_ticker, year, n=15):
     fig, axes = plt.subplots(nrows=1, ncols=2, figsize=(15, 5))
 
     ax_ac_ti = acquired_by_ticker.head(n).sort_values(ascending=True).plot.barh(ax=axes[0], y='issuerTicker')
