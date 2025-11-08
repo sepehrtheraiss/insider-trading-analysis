@@ -1,5 +1,6 @@
 from typing import Dict, Any, Iterable, List
 import pandas as pd
+import math
 
 def _footnotes_text(footnotes: List[dict] | None) -> str:
     if not footnotes:
@@ -18,7 +19,7 @@ def normalize_transactions(transactions: Iterable[Dict[str, Any]]) -> pd.DataFra
       filedAt, periodOfReport, issuerTicker, issuerCik, issuerName,
       reporter, reporterCik, isOfficer, officerTitle, isDirector, isTenPercentOwner,
       table, code, acquiredDisposed, transactionDate, shares, pricePerShare,
-      sharesOwnedFollowing, dollarValue, is10b5_1, documentType
+      sharesOwnedFollowing, totalValue, is10b5_1, documentType
     """
     records: list[dict] = []
     for t in transactions:
@@ -38,7 +39,6 @@ def normalize_transactions(transactions: Iterable[Dict[str, Any]]) -> pd.DataFra
                 coding = row.get("coding") or {}
                 amts = row.get("amounts") or {}
                 post = row.get("postTransactionAmounts") or {}
-                own = row.get("ownershipNature") or {}
 
                 shares = amts.get("shares")
                 price = amts.get("pricePerShare")
@@ -46,12 +46,7 @@ def normalize_transactions(transactions: Iterable[Dict[str, Any]]) -> pd.DataFra
                 ad = amts.get("acquiredDisposedCode")
                 tx_date = row.get("transactionDate")
                 post_sh = post.get("sharesOwnedFollowingTransaction")
-
-                # Compute a dollar value if possible
-                try:
-                    dollar_value = float(shares) * float(price) if shares is not None and price is not None else None
-                except Exception:
-                    dollar_value = None
+                total_value = float(shares) * float(price) if shares is not None and price is not None else None
 
                 records.append({
                     "filedAt": filed_at,
@@ -72,14 +67,14 @@ def normalize_transactions(transactions: Iterable[Dict[str, Any]]) -> pd.DataFra
                     "transactionDate": tx_date,
                     "shares": shares,
                     "pricePerShare": price,
+                    "totalValue": total_value,
                     "sharesOwnedFollowing": post_sh,
-                    "dollarValue": dollar_value,
                     "is10b5_1": bool(is_10b5),
                 })
     df = pd.DataFrame.from_records(records)
     # Normalize types
     if not df.empty:
-        for col in ["shares","pricePerShare","dollarValue","sharesOwnedFollowing"]:
+        for col in ["shares","pricePerShare","totalValue","sharesOwnedFollowing"]:
             df[col] = pd.to_numeric(df[col], errors="coerce")
         for col in ["filedAt","transactionDate","periodOfReport"]:
             df[col] = pd.to_datetime(df[col], errors="coerce")

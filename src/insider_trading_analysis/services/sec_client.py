@@ -1,7 +1,7 @@
 from typing import Dict, Any, Iterable
 from .base_client import ApiBaseClient, HttpBaseClient
 from sec_api import InsiderTradingApi
-from ..config import DEFAULT_PAGE_SIZE # needs work
+from ..utils.config import DEFAULT_PAGE_SIZE # needs work
 import time
 import pandas as pd
 
