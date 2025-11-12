@@ -6,6 +6,7 @@ from views.plots import plot_annual_graph, plot_distribution_trans_codes, plot_n
 from models.db import FileHelper
 from utils.utils import iterate_months
 from datetime import datetime, timedelta
+import pandas as pd
 
 class CoreController:
     def __init__(self, conf):
@@ -13,29 +14,34 @@ class CoreController:
         self.sec_client = SecClient(conf.base_url, conf.sec_api_key)
         self.file = FileHelper()
 
+    def _get_insider_transactions_it_month(self, args):
+        file_name = f'insider_transactions.{args.query}_{args.start}_{args.end}'
+        current_date = datetime.strptime(args.start, "%Y-%m-%d")
+        next_date = current_date + timedelta(days=31)
+        end_date = datetime.strptime(args.end, "%Y-%m-%d") + timedelta(days=31)
+        # remove time 2024-01-01 00:00:00
+        current_date = str(current_date).split(' ')[0]
+        start_date = str(next_date).split(' ')[0]
+        end_date = str(end_date).split(' ')[0]
+        for next_date in iterate_months(start_date, end_date):
+            raw_iter = self.sec_client.fetch_insider_transactions(args.query, current_date, next_date)
+            current_date = next_date
+            df = normalize_transactions(raw_iter)
+            if not df.empty:
+                #self.file.csv_dump_raw(file_name, list(df.columns), list(df.values))
+                self.file.df_csv_dump(file_name, df)
+            #yield raw_iter
+
     def get_insider_transactions(self, args):
         file_name = f'insider_transactions.{args.query}_{args.start}_{args.end}'
-        #self.file.remove(file_name)
         if not self.file.contains(file_name):
             # if data.items >= 10,000 then fetch maxes out at 10k.
             # once from param becomes 10k, fetch ends. even if there's more data.
-            current_date = datetime.strptime(args.start, "%Y-%m-%d")
-            next_date = current_date + timedelta(days=31)
-            end_date = datetime.strptime(args.end, "%Y-%m-%d") + timedelta(days=31)
-            # remove time 2024-01-01 00:00:00
-            current_date = str(current_date).split(' ')[0]
-            start_date = str(next_date).split(' ')[0]
-            end_date = str(end_date).split(' ')[0]
-            for next_date in iterate_months(start_date, end_date):
-                raw_iter = self.sec_client.fetch_insider_transactions(args.query, current_date, next_date)
-                self.file.json_dump(file_name, list(raw_iter))
-                #self.file.json_dump_gen(file_name, raw_iter)
-                current_date = next_date 
-        #raw_iter = self.file.json_read_gen(file_name)
-        raw_iter = self.file.json_read_lines(file_name)
-        df = normalize_transactions(raw_iter)
-        if df.empty:
-            print("No transactions returned.")
+            self._get_insider_transactions_it_month(args)
+
+        df = self.file.df_csv_read(file_name)
+        df["filedAt"] = pd.to_datetime(df["filedAt"], errors="coerce", utc=True)
+        df["periodOfReport"] = pd.to_datetime(df["periodOfReport"], errors="coerce", utc=True)
         return df
 
     def get_exchange_mapping(self):

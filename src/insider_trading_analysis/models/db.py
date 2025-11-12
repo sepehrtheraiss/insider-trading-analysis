@@ -53,22 +53,48 @@ class FileHelper:
 
     def json_read_lines(self, file_name):
         with open(f"{self.path}/{file_name}", "r") as f:
+            records = []
             for line in f:
                 line = line.strip()
                 if not line:
                     continue
-                yield json.loads(line)
-                
+                try:
+                    data = json.loads(line)
+                    # if each line is an array:
+                    if isinstance(data, list):
+                        records.extend(data)
+                    else:
+                        records.append(data)
+                except json.JSONDecodeError as e:
+                    print(f"Skipping malformed line: {e}")
+            return records
+
     def df_csv_dump(self, file_name, df, index=False):
-        df.to_csv(f"{self.path}/{file_name}", index=index)
+        """Append DataFrame to CSV, writing header only if new file."""
+        file_path = f"{self.path}/{file_name}"
+        path_exist = os.path.exists(file_path)  # only write header if file doesn’t exist
+
+        df.to_csv(
+            file_path,
+            mode="a",
+            index=index,
+            header=not path_exist,
+            encoding="utf-8",
+            date_format="%Y-%m-%d %H:%M:%S",  # consistent datetime format
+            float_format="%.6f",
+        )        
 
     def df_csv_read(self, file_name):
-        return pd.read_csv(f"{self.path}/{file_name}")     
+        df = pd.read_csv(f"{self.path}/{file_name}", dtype_backend="numpy_nullable") # turns objects into string and bool to boolean ¯\_(ツ)_/¯
+        return df
     
     def csv_dump_raw(self, file_name, header, data):
-        with open(f"{self.path}/{file_name}", 'w', newline='') as csvfile:
+        file_path = f"{self.path}/{file_name}"
+        path_exist = not os.path.exists(file_path)  # only write header if file doesn’t exist
+        with open(file_path, 'a', newline='') as csvfile:
             writer = csv.writer(csvfile)
-            writer.writerow(header)
+            if path_exist: 
+                writer.writerow(header)
             writer.writerows(data)
 
     def csv_dump_dict(self, file_name, header, data):

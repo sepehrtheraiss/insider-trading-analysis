@@ -61,6 +61,7 @@ class SecClient:
                 frm += size
                 # needs work
                 time.sleep(sleep_seconds)
+            yield {}
 
      
     def fetch_exchange_mapping(self, exchanges=( "nasdaq", "nyse" )) -> pd.DataFrame:
