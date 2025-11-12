@@ -13,8 +13,7 @@ def total_sec_acq_dis_day(df):
 
 def companies_bs_in_period(df, year):
     ''' Companies most often bought/sold in a period '''
-    periodDf = df['periodOfReport'].dt.year == year
-
+    periodDf = df['periodOfReport'].dt.year == int(year)
     acquired_by_ticker = df[(df["acquiredDisposed"]=="A") & periodDf] \
         .groupby(["issuerTicker"])['totalValue'].sum().sort_values(ascending=False)
 

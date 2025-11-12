@@ -26,11 +26,12 @@ class FileHelper:
                 yield row
 
     def json_dump(self, file_name, data):
-        with open(f"{self.path}/{file_name}", 'w') as json_file:
+        with open(f"{self.path}/{file_name}", 'a') as json_file:
             json.dump(data, json_file, indent=4)
+            json_file.write('\n')
 
     def json_dump_gen(self, file_name, gen):
-        with open(f"{self.path}/{file_name}", 'w') as json_file:
+        with open(f"{self.path}/{file_name}", 'a') as json_file:
             json_file.write('[')
             first = True
             for row in gen:
@@ -49,6 +50,14 @@ class FileHelper:
         with open(f"{self.path}/{file_name}", "r") as f:
             for row in json.load(f):
                 yield row
+
+    def json_read_lines(self, file_name):
+        with open(f"{self.path}/{file_name}", "r") as f:
+            for line in f:
+                line = line.strip()
+                if not line:
+                    continue
+                yield json.loads(line)
                 
     def df_csv_dump(self, file_name, df, index=False):
         df.to_csv(f"{self.path}/{file_name}", index=index)
