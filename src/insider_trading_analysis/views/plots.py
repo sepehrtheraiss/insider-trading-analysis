@@ -25,33 +25,6 @@ params = {'legend.fontsize': '14',
          }
 
 plt.rcParams.update(params)
-def savefig_bar_by_code(df: pd.DataFrame, out_path: str) -> bool:
-    if df.empty:
-        return False 
-    plt.figure()
-    (df.groupby(["code"], dropna=False)["totalValue"].sum()
-      .sort_values(ascending=False)
-      .plot(kind="bar", rot=0))
-    plt.title("Total Insider Total Value by Code")
-    plt.ylabel("USD")
-    plt.tight_layout()
-    plt.savefig(out_path, dpi=150)
-    plt.close()
-    return True 
-
-def savefig_heatmap_sector_year(pivot: pd.DataFrame, out_path: str) -> bool:
-    if pivot.empty:
-        return False 
-    plt.figure()
-    plt.imshow(pivot.fillna(0).values, aspect="auto")
-    plt.xticks(range(len(pivot.columns)), pivot.columns, rotation=45, ha="right")
-    plt.yticks(range(len(pivot.index)), pivot.index)
-    plt.title("Insider Total Value by Sector × Year")
-    plt.colorbar()
-    plt.tight_layout()
-    plt.savefig(out_path, dpi=150)
-    plt.close()
-    return True 
 
 def plot_annual_graph(df, args):
     df.index = pd.to_datetime(df.index)
