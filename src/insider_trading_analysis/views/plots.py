@@ -47,7 +47,7 @@ def plot_annual_graph(df, args):
 
     plt.tight_layout()
     if args.save:
-        plt.savefig(f'{args.outpath}/annual_graph_{args.start}-{args.end}', dpi=150)
+        plt.savefig(f'{args.outpath}/annual graph {args.start}-{args.end}', dpi=150)
     if args.show:
         plt.show()
 
@@ -56,7 +56,7 @@ def plot_distribution_trans_codes(df, args):
     year_start = df.head(1)['periodOfReport'].dt.year.item()
     year_end = df.tail(1)['periodOfReport'].dt.year.item()
     transaction_code = df.groupby(["acquiredDisposed", "code"])['totalValue'].sum() 
-    ax_codes = transaction_code.plot.barh(figsize=(10,8))
+    ax_codes = transaction_code.plot.barh(figsize=(20,10))
     ax_codes.xaxis.set_major_formatter(matplotlib.ticker.FuncFormatter(millions_formatter))
     ax_codes.set_xlabel("Amount $")
     ax_codes.set_ylabel("Transaction Code")
@@ -65,13 +65,13 @@ def plot_distribution_trans_codes(df, args):
 
     plt.tight_layout()
     if args.save:
-        plt.savefig(f'{args.outpath}/annual_graph_{args.start}-{args.end}', dpi=150)
+        plt.savefig(f'{args.outpath}/Distribution of Transaction Codes {args.start}-{args.end}', dpi=150)
     if args.show:
         plt.show()
 
 # N companies bought/sold in a period
 def plot_n_most_companies_bs(acquired_by_ticker, disposed_by_ticker, args):
-    fig, axes = plt.subplots(nrows=1, ncols=2, figsize=(15, 5))
+    fig, axes = plt.subplots(nrows=1, ncols=2, figsize=(20, 10))
     ax_ac_ti = acquired_by_ticker.head(args.n).sort_values(ascending=True).plot.barh(ax=axes[0], y='issuerTicker')
     ax_ac_ti.xaxis.set_major_formatter(matplotlib.ticker.FuncFormatter(millions_formatter))
     ax_ac_ti.set_xlabel("Amount $")
@@ -88,6 +88,6 @@ def plot_n_most_companies_bs(acquired_by_ticker, disposed_by_ticker, args):
 
     fig.tight_layout()
     if args.save:
-        plt.savefig(f'{args.outpath}/annual_graph_{args.start}-{args.end}', dpi=150)
+        plt.savefig(f'{args.outpath}/Top {args.n} companies bought & sold in {args.start}-{args.end}', dpi=150)
     if args.show:
         plt.show()
