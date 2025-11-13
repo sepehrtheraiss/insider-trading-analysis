@@ -46,7 +46,15 @@ class CoreController:
         df = df[df["periodOfReport"].dt.year >= year]      # keep only year+ filings.
         df = df[df["filedAt"].notna()]              
         df = df[df["filedAt"].dt.year >= year]
-        return df
+        filter_all = (df["shares"] != df["pricePerShare"]) & \
+        ( (df["pricePerShare"] < 6000) | (df["shares"] == 1) ) & \
+        (df["totalValue"] > 0) & \
+        (df["code"] != "M") & \
+        (df["issuerTicker"] != "NONE") & \
+        (df["issuerTicker"] != "N/A") & \
+        (df["issuerTicker"] != "NA") & \
+        (~df["issuerCik"].astype("Int64").isin([810893,1454510,1463208,1877939,1556801,827187])) # insider incorrectly reported share price
+        return df[filter_all]
 
     def get_exchange_mapping(self):
         file_name = 'exchange_mapping_nasdaq_nyse'

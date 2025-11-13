@@ -8,8 +8,8 @@ class FileHelper:
         self.path = path
         os.makedirs(path, exist_ok=True)
 
-    def contains(self, file_name):
-        return os.path.exists(f"{self.path}/{file_name}")
+    def contains(self, file_name, ext='.csv'):
+        return os.path.exists(f"{self.path}/{file_name}{ext}")
     
     def remove(self, file_name):
         if self.contains(file_name):
