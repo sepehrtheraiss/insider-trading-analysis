@@ -2,7 +2,7 @@ from api.client.services.core_service import SecClient
 from .flatten import normalize_transactions
 from .clean import attach_mapping, filter_valid_exchanges, remove_price_outliers, finalize
 from .analysis import total_sec_acq_dis_day, companies_bs_in_period
-from views.plots import plot_annual_graph, plot_distribution_trans_codes, plot_n_most_companies_bs
+from views.plots import plot_amount_assets_acquired_disposed, plot_distribution_trans_codes, plot_n_most_companies_bs
 from models.db import FileHelper
 from utils.utils import iterate_months
 from datetime import datetime, timedelta
@@ -67,10 +67,10 @@ class CoreController:
         mapping = self.file.df_csv_read(file_name)
         return mapping
             
-    def do_plot_annual_graph(self, args):
+    def do_plot_amount_assets_acquired_disposed(self, args):
         df = self.get_insider_transactions(args)
         df = total_sec_acq_dis_day(df)
-        plot_annual_graph(df, args)
+        plot_amount_assets_acquired_disposed(df, args)
 
     def do_plot_distribution_trans_codes(self, args):
         df = self.get_insider_transactions(args)

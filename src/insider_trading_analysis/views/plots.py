@@ -26,7 +26,7 @@ params = {'legend.fontsize': '14',
 
 plt.rcParams.update(params)
 
-def plot_annual_graph(df, args):
+def plot_amount_assets_acquired_disposed(df, args):
     df.index = pd.to_datetime(df.index)
 
     acquired_yr = df.groupby(pd.Grouper(freq='Y'))['acquired'].sum()
@@ -47,7 +47,7 @@ def plot_annual_graph(df, args):
 
     plt.tight_layout()
     if args.save:
-        plt.savefig(f'{args.outpath}/annual graph {args.start}-{args.end}', dpi=150)
+        plt.savefig(f'{args.outpath}/amount of assets acquired and disposed {args.start}-{args.end}', dpi=150)
     if args.show:
         plt.show()
 

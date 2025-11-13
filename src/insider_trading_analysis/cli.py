@@ -6,9 +6,9 @@ def handle_build_dataset(args):
     ctrl = CoreController(Config())
     ctrl.build_dataset(args)
 
-def handle_plot_annual_graph(args):
+def handle_plot_amount_assets_acquired_disposed(args):
     ctrl = CoreController(Config())
-    ctrl.do_plot_annual_graph(args)
+    ctrl.do_plot_amount_assets_acquired_disposed(args)
 
 def handle_plot_distribution_trans_codes(args):
     ctrl = CoreController(Config())
@@ -35,14 +35,14 @@ def main():
     plot_subparsers = plot_parser.add_subparsers(dest="subcommand", required=True)
 
     # plot_annual_graph 
-    annual_graph_parser = plot_subparsers.add_parser("annual_graph", help="plots annual graph")
-    annual_graph_parser.add_argument("--query", default="*:*", help="Lucene query, e.g. issuer.tradingSymbol:TSLA")
-    annual_graph_parser.add_argument("--start", required=True, help="Start date YYYY-MM-DD for filedAt range")
-    annual_graph_parser.add_argument("--end", required=True, help="End date YYYY-MM-DD for filedAt range")
-    annual_graph_parser.add_argument("--save", action='store_true', default=False, help="Save plot")
-    annual_graph_parser.add_argument("--outpath", required='--save' in sys.argv, help="path for save plot")
-    annual_graph_parser.add_argument("--show", action='store_true', required=False, help="Show plot")
-    annual_graph_parser.set_defaults(func=handle_plot_annual_graph) 
+    amount_assets_acquired_disposed_parser = plot_subparsers.add_parser("amount_assets_acquired_disposed", help="plots amount of assets acquired disposed")
+    amount_assets_acquired_disposed_parser.add_argument("--query", default="*:*", help="Lucene query, e.g. issuer.tradingSymbol:TSLA")
+    amount_assets_acquired_disposed_parser.add_argument("--start", required=True, help="Start date YYYY-MM-DD for filedAt range")
+    amount_assets_acquired_disposed_parser.add_argument("--end", required=True, help="End date YYYY-MM-DD for filedAt range")
+    amount_assets_acquired_disposed_parser.add_argument("--save", action='store_true', default=False, help="Save plot")
+    amount_assets_acquired_disposed_parser.add_argument("--outpath", required='--save' in sys.argv, help="path for save plot")
+    amount_assets_acquired_disposed_parser.add_argument("--show", action='store_true', required=False, help="Show plot")
+    amount_assets_acquired_disposed_parser.set_defaults(func=handle_plot_amount_assets_acquired_disposed) 
 
     # plot_distribution_trans_codes 
     plot_distribution_trans_codes_parser = plot_subparsers.add_parser("distribution_trans_codes", help="plot distribution transaction codes")
