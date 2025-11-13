@@ -71,7 +71,7 @@ class FileHelper:
 
     def df_csv_dump(self, file_name, df, index=False):
         """Append DataFrame to CSV, writing header only if new file."""
-        file_path = f"{self.path}/{file_name}"
+        file_path = f"{self.path}/{file_name}.csv"
         path_exist = os.path.exists(file_path)  # only write header if file doesn’t exist
 
         df.to_csv(
@@ -85,11 +85,12 @@ class FileHelper:
         )        
 
     def df_csv_read(self, file_name):
-        df = pd.read_csv(f"{self.path}/{file_name}", dtype_backend="numpy_nullable") # turns objects into string and bool to boolean ¯\_(ツ)_/¯
+        df = pd.read_csv(f"{self.path}/{file_name}.csv", dtype_backend="numpy_nullable") # turns objects into string and bool to boolean ¯\_(ツ)_/¯
+        # pd.read_csv("file.csv", parse_dates=["filedAt", "periodOfReport"], utc=True)
         return df
     
     def csv_dump_raw(self, file_name, header, data):
-        file_path = f"{self.path}/{file_name}"
+        file_path = f"{self.path}/{file_name}.csv"
         path_exist = not os.path.exists(file_path)  # only write header if file doesn’t exist
         with open(file_path, 'a', newline='') as csvfile:
             writer = csv.writer(csvfile)
@@ -104,7 +105,7 @@ class FileHelper:
             writer.writerows(data)
 
     def csv_read(self, file_name):
-        with open(f"{self.path}/{file_name}", 'r', newline='') as csvfile:
+        with open(f"{self.path}/{file_name}.csv", 'r', newline='') as csvfile:
             reader = csv.reader(csvfile)
             return reader   
           

@@ -38,10 +38,14 @@ class CoreController:
             # if data.items >= 10,000 then fetch maxes out at 10k.
             # once from param becomes 10k, fetch ends. even if there's more data.
             self._get_insider_transactions_it_month(args)
-
+        year = int(args.start.split('-')[0])
         df = self.file.df_csv_read(file_name)
         df["filedAt"] = pd.to_datetime(df["filedAt"], errors="coerce", utc=True)
         df["periodOfReport"] = pd.to_datetime(df["periodOfReport"], errors="coerce", utc=True)
+        df = df[df["periodOfReport"].notna()]              # remove rows that failed conversion
+        df = df[df["periodOfReport"].dt.year >= year]      # keep only year+ filings.
+        df = df[df["filedAt"].notna()]              
+        df = df[df["filedAt"].dt.year >= year]
         return df
 
     def get_exchange_mapping(self):
@@ -55,13 +59,16 @@ class CoreController:
         return mapping
             
     def do_plot_annual_graph(self, args):
-        plot_annual_graph(total_sec_acq_dis_day(self.get_insider_transactions(args)))
+        df = self.get_insider_transactions(args)
+        df = total_sec_acq_dis_day(df)
+        plot_annual_graph(df)
 
     def do_plot_distribution_trans_codes(self, args):
         plot_distribution_trans_codes(self.get_insider_transactions(args))
 
     def do_plot_n_most_companies_bs(self, args):
-        acquired_by_ticker, disposed_by_ticker = companies_bs_in_period(self.get_insider_transactions(args), args.year)
+        df = self.get_insider_transactions(args)
+        acquired_by_ticker, disposed_by_ticker = companies_bs_in_period(df, args.year)
         plot_n_most_companies_bs(acquired_by_ticker, disposed_by_ticker, args.year)
 
     def build_dataset(self, args):
