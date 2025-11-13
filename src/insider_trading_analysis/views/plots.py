@@ -53,7 +53,7 @@ def savefig_heatmap_sector_year(pivot: pd.DataFrame, out_path: str) -> bool:
     plt.close()
     return True 
 
-def plot_annual_graph(df):
+def plot_annual_graph(df, args):
     df.index = pd.to_datetime(df.index)
 
     acquired_yr = df.groupby(pd.Grouper(freq='Y'))['acquired'].sum()
@@ -72,10 +72,14 @@ def plot_annual_graph(df):
     ax.set_title("Acquired/Disposed per Year")
     ax.figure.autofmt_xdate(rotation=0, ha='center')
 
-    plt.show()
+    plt.tight_layout()
+    if args.save:
+        plt.savefig(f'{args.outpath}/annual_graph_{args.start}-{args.end}', dpi=150)
+    if args.show:
+        plt.show()
 
 # Distribution of Transaction Codes
-def plot_distribution_trans_codes(df):
+def plot_distribution_trans_codes(df, args):
     year_start = df.head(1)['periodOfReport'].dt.year.item()
     year_end = df.tail(1)['periodOfReport'].dt.year.item()
     transaction_code = df.groupby(["acquiredDisposed", "code"])['totalValue'].sum() 
@@ -86,24 +90,31 @@ def plot_distribution_trans_codes(df):
     ax_codes.set_title(f"Distribution of Transaction Codes ({year_start} - {year_end})")
     ax_codes.figure.autofmt_xdate(rotation=0, ha='center')
 
-    plt.show()
+    plt.tight_layout()
+    if args.save:
+        plt.savefig(f'{args.outpath}/annual_graph_{args.start}-{args.end}', dpi=150)
+    if args.show:
+        plt.show()
 
 # N companies bought/sold in a period
-def plot_n_most_companies_bs(acquired_by_ticker, disposed_by_ticker, year, n=15):
+def plot_n_most_companies_bs(acquired_by_ticker, disposed_by_ticker, args):
     fig, axes = plt.subplots(nrows=1, ncols=2, figsize=(15, 5))
-    ax_ac_ti = acquired_by_ticker.head(n).sort_values(ascending=True).plot.barh(ax=axes[0], y='issuerTicker')
+    ax_ac_ti = acquired_by_ticker.head(args.n).sort_values(ascending=True).plot.barh(ax=axes[0], y='issuerTicker')
     ax_ac_ti.xaxis.set_major_formatter(matplotlib.ticker.FuncFormatter(millions_formatter))
     ax_ac_ti.set_xlabel("Amount $")
     ax_ac_ti.set_ylabel("Ticker")
-    ax_ac_ti.set_title(f"Top {n} Most Bought Companies in {year}")
+    ax_ac_ti.set_title(f"Top {args.n} Most Bought Companies in {args.year}")
     ax_ac_ti.figure.autofmt_xdate(rotation=0, ha='center')
 
-    ax_di_ti = disposed_by_ticker.head(n).sort_values(ascending=True).plot.barh(ax=axes[1], y='issuerTicker')
+    ax_di_ti = disposed_by_ticker.head(args.n).sort_values(ascending=True).plot.barh(ax=axes[1], y='issuerTicker')
     ax_di_ti.xaxis.set_major_formatter(matplotlib.ticker.FuncFormatter(millions_formatter))
     ax_di_ti.set_xlabel("Amount $")
     ax_di_ti.set_ylabel("Ticker")
-    ax_di_ti.set_title(f"Top {n} Most Sold Companies in {year}")
+    ax_di_ti.set_title(f"Top {args.n} Most Sold Companies in {args.year}")
     ax_di_ti.figure.autofmt_xdate(rotation=0, ha='center')
 
     fig.tight_layout()
-    plt.show()
+    if args.save:
+        plt.savefig(f'{args.outpath}/annual_graph_{args.start}-{args.end}', dpi=150)
+    if args.show:
+        plt.show()

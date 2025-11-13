@@ -40,6 +40,7 @@ class CoreController:
             self._get_insider_transactions_it_month(args)
         year = int(args.start.split('-')[0])
         df = self.file.df_csv_read(file_name)
+        #df["totalValue"] = pd.to_numeric(df["totalValue"], errors="coerce")
         df["filedAt"] = pd.to_datetime(df["filedAt"], errors="coerce", utc=True)
         df["periodOfReport"] = pd.to_datetime(df["periodOfReport"], errors="coerce", utc=True)
         df = df[df["periodOfReport"].notna()]              # remove rows that failed conversion
@@ -69,15 +70,16 @@ class CoreController:
     def do_plot_annual_graph(self, args):
         df = self.get_insider_transactions(args)
         df = total_sec_acq_dis_day(df)
-        plot_annual_graph(df)
+        plot_annual_graph(df, args)
 
     def do_plot_distribution_trans_codes(self, args):
-        plot_distribution_trans_codes(self.get_insider_transactions(args))
+        df = self.get_insider_transactions(args)
+        plot_distribution_trans_codes(df, args)
 
     def do_plot_n_most_companies_bs(self, args):
         df = self.get_insider_transactions(args)
         acquired_by_ticker, disposed_by_ticker = companies_bs_in_period(df, args.year)
-        plot_n_most_companies_bs(acquired_by_ticker, disposed_by_ticker, args.year)
+        plot_n_most_companies_bs(acquired_by_ticker, disposed_by_ticker, args)
 
     def build_dataset(self, args):
         mapping = self.get_exchange_mapping()
