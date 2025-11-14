@@ -18,6 +18,10 @@ def handle_n_most_companies_bs(args):
     ctrl = CoreController(Config())
     ctrl.do_plot_n_most_companies_bs(args)
 
+def handle_n_most_companies_bs_by_person(args):
+    ctrl = CoreController(Config())
+    ctrl.do_plot_n_most_companies_bs_by_person(args)
+
 def main():
     parser = argparse.ArgumentParser(prog="Insider trading analysis", description="Analyze insider trading data CSV")
     subparsers = parser.add_subparsers(dest="command", required=True)
@@ -66,6 +70,17 @@ def main():
     plot_n_most_companies_bs.add_argument("--show", action='store_true', required=False, help="Show plot")
     plot_n_most_companies_bs.set_defaults(func=handle_n_most_companies_bs) 
 
+    # plot_n_most_companies_bs by person
+    plot_n_most_companies_bs_by_person= plot_subparsers.add_parser("n_most_companies_bs_by_person", help="plot top n most_companies bought and sold")
+    plot_n_most_companies_bs_by_person.add_argument("--query", default="*:*", help="Lucene query, e.g. issuer.tradingSymbol:TSLA")
+    plot_n_most_companies_bs_by_person.add_argument("--start", required=True, help="Start date YYYY-MM-DD for filedAt range")
+    plot_n_most_companies_bs_by_person.add_argument("--end", required=True, help="End date YYYY-MM-DD for filedAt range")
+    plot_n_most_companies_bs_by_person.add_argument("--year", required=True, type=int, help="period to analyze")
+    plot_n_most_companies_bs_by_person.add_argument("--n", required=False, default=15, type=int, help="top n trades")
+    plot_n_most_companies_bs_by_person.add_argument("--save", action='store_true', default=False, help="Save plot")
+    plot_n_most_companies_bs_by_person.add_argument("--outpath", required='--save' in sys.argv, help="path for save plot")
+    plot_n_most_companies_bs_by_person.add_argument("--show", action='store_true', required=False, help="Show plot")
+    plot_n_most_companies_bs_by_person.set_defaults(func=handle_n_most_companies_bs_by_person) 
     args = parser.parse_args()
     args.func(args)
 

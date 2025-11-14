@@ -91,3 +91,34 @@ def plot_n_most_companies_bs(acquired_by_ticker, disposed_by_ticker, args):
         plt.savefig(f'{args.outpath}/Top {args.n} companies bought & sold in {args.start}-{args.end}', dpi=150)
     if args.show:
         plt.show()
+
+
+def name_formatter(tup):
+  name, ticker = tup
+  name = name[:30] + '..' if len(name) > 30 else name
+  return (name, ticker)
+
+def plot_n_most_companies_bs_by_person(acquired_by_ticker, disposed_by_ticker, args):
+    acquired_by_ticker.index = acquired_by_ticker.index.map(name_formatter)
+    disposed_by_ticker.index = disposed_by_ticker.index.map(name_formatter)
+    fig, axes = plt.subplots(nrows=1, ncols=2, figsize=(20, 10))
+
+    ax_ac_in = acquired_by_ticker.head(10).sort_values(ascending=True).plot.barh(ax=axes[0], y='reportingPerson')
+    ax_ac_in.xaxis.set_major_formatter(matplotlib.ticker.FuncFormatter(millions_formatter))
+    ax_ac_in.set_xlabel("Amount $")
+    ax_ac_in.set_ylabel("Insider, Ticker")
+    ax_ac_in.set_title(f"Top {args.n} Largest Buyers in {args.year}")
+    ax_ac_in.figure.autofmt_xdate(rotation=0, ha='center')
+
+    ax_di_in = disposed_by_ticker.head(10).sort_values(ascending=True).plot.barh(ax=axes[1], y='reportingPerson')
+    ax_di_in.xaxis.set_major_formatter(matplotlib.ticker.FuncFormatter(millions_formatter))
+    ax_di_in.set_xlabel("Amount $")
+    ax_di_in.set_ylabel("Insider, Ticker")
+    ax_di_in.set_title(f"Top {args.n} Largest Sellers {args.year}")
+    ax_di_in.figure.autofmt_xdate(rotation=0, ha='center')
+
+    fig.tight_layout()
+    if args.save:
+        plt.savefig(f'{args.outpath}/Top {args.n} companies bought & sold by insider{args.start}-{args.end}', dpi=150)
+    if args.show:
+        plt.show()

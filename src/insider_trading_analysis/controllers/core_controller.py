@@ -1,8 +1,8 @@
 from api.client.services.core_service import SecClient
 from .flatten import normalize_transactions
 from .clean import attach_mapping, filter_valid_exchanges, remove_price_outliers, finalize
-from .analysis import total_sec_acq_dis_day, companies_bs_in_period
-from views.plots import plot_amount_assets_acquired_disposed, plot_distribution_trans_codes, plot_n_most_companies_bs
+from .analysis import total_sec_acq_dis_day, companies_bs_in_period, companies_bs_in_period_by_person
+from views.plots import plot_amount_assets_acquired_disposed, plot_distribution_trans_codes, plot_n_most_companies_bs, plot_n_most_companies_bs_by_person 
 from models.db import FileHelper
 from utils.utils import iterate_months
 from datetime import datetime, timedelta
@@ -80,6 +80,11 @@ class CoreController:
         df = self.get_insider_transactions(args)
         acquired_by_ticker, disposed_by_ticker = companies_bs_in_period(df, args.year)
         plot_n_most_companies_bs(acquired_by_ticker, disposed_by_ticker, args)
+
+    def do_plot_n_most_companies_bs_by_person(self, args):
+        df = self.get_insider_transactions(args)
+        acquired_by_insider, disposed_by_insider = companies_bs_in_period_by_person(df, args.year)
+        plot_n_most_companies_bs_by_person(acquired_by_insider, disposed_by_insider, args)
 
     def build_dataset(self, args):
         mapping = self.get_exchange_mapping()

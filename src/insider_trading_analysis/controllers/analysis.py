@@ -21,3 +21,18 @@ def companies_bs_in_period(df, year):
         .groupby(["issuerTicker"])['totalValue'].sum().sort_values(ascending=False)
 
     return (acquired_by_ticker, disposed_by_ticker) 
+
+
+def companies_bs_in_period_by_person(df, year):
+    periodDf = df['periodOfReport'].dt.year == int(year)
+    acquired_by_insider = df[(df["acquiredDisposed"]=="A") & periodDf] \
+        .groupby(["reporter", "issuerTicker"])['totalValue'] \
+        .sum() \
+        .sort_values(ascending=False)
+
+    disposed_by_insider = df[(df["acquiredDisposed"]=="D") & periodDf] \
+        .groupby(["reporter", "issuerTicker"])['totalValue'] \
+        .sum() \
+        .sort_values(ascending=False)
+
+    return (acquired_by_insider, disposed_by_insider) 
