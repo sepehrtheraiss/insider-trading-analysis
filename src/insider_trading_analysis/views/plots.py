@@ -119,6 +119,68 @@ def plot_n_most_companies_bs_by_person(acquired_by_ticker, disposed_by_ticker, a
 
     fig.tight_layout()
     if args.save:
-        plt.savefig(f'{args.outpath}/Top {args.n} companies bought & sold by insider{args.start}-{args.end}', dpi=150)
+        plt.savefig(f'{args.outpath}/Top {args.n} companies bought & sold by insider {args.start}-{args.end}', dpi=150)
+    if args.show:
+        plt.show()
+
+def plot_line_chart(ohcl, args):
+
+    ohcl["Close"].plot(xlabel="Date", ylabel="Price $", title=f"{args.ticker} Daily Price Chart", figsize=(15,7))
+         
+    plt.tight_layout()
+    if args.save:
+        plt.savefig(f'{args.outpath}/{args.ticker} Daily Price Chart {args.start}-{args.end}', dpi=150)
+    if args.show:
+        plt.show()
+
+def print_chart(ticker_series, title="", ylabel="Price $", args=None):
+    ax = ticker_series["Close"].plot(figsize=(20, 7))
+    ax.xaxis_date()
+    ax.plot(ticker_series.index, ticker_series['Close'], lw=2)
+
+    max_acquired = ticker_series['totalValue'].max()
+
+    # draw markers onto price time series. Marker size correlates to news volume.
+    for index, row in ticker_series.iterrows():
+        if row['totalValue'] == 0:
+            continue
+
+        markersize = (row['totalValue'] / max_acquired) * 25
+
+        if markersize < 7:
+            markersize = 7
+
+        ax.plot([index], 
+                [row['Close']], 
+                marker='o', 
+                color='red', 
+                markersize=markersize)
+
+        # overlay arrow pointer at largest news volume 
+        if row['totalValue'] == max_acquired:
+            ax.annotate(
+            '\n' + "$ {:,.0f}".format(row['totalValue']),
+            xy=(index, row['Close']), xycoords='data',
+            xytext=(0, -30), textcoords='offset pixels',
+            arrowprops=dict(arrowstyle="->", connectionstyle="arc3", color='red')
+            )
+
+    ax.set_ylabel(ylabel)
+    ax.set_xlabel('Day')
+    ax.set_title(title)
+
+    total_value = ticker_series['totalValue'].sum()
+    text_y_pos = (ticker_series['Close'].max() + ticker_series['Close'].min()) / 2
+    ax.annotate(
+    'totalValue amount: ' + "$ {:,.0f}".format(total_value),
+    xy=(ticker_series.index[10], text_y_pos), xycoords='data',
+    xytext=(-100, -100), textcoords='offset pixels',
+    )
+
+    plt.setp(plt.gca().get_xticklabels(), rotation = 0, ha='center')
+
+    plt.tight_layout()
+    if args.save:
+        plt.savefig(f'{args.outpath}/{args.ticker} Daily Price Chart {args.start}-{args.end}', dpi=150)
     if args.show:
         plt.show()

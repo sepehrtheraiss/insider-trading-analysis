@@ -84,8 +84,9 @@ class FileHelper:
             float_format="%.6f",
         )        
 
-    def df_csv_read(self, file_name):
-        df = pd.read_csv(f"{self.path}/{file_name}.csv", dtype_backend="numpy_nullable") # turns objects into string and bool to boolean ¯\_(ツ)_/¯
+    def df_csv_read(self, file_name, index_col=None, parse_dates=None):
+        #df = pd.read_csv(f"{self.path}/{file_name}.csv", dtype_backend="numpy_nullable") # turns objects into string and bool to boolean ¯\_(ツ)_/¯
+        df = pd.read_csv(f"{self.path}/{file_name}.csv", index_col=index_col, parse_dates=parse_dates) 
         # pd.read_csv("file.csv", parse_dates=["filedAt", "periodOfReport"], utc=True)
         return df
     

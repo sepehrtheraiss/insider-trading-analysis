@@ -2,7 +2,7 @@ from api.client.services.core_service import SecClient
 from .flatten import normalize_transactions
 from .clean import attach_mapping, filter_valid_exchanges, remove_price_outliers, finalize
 from .analysis import total_sec_acq_dis_day, companies_bs_in_period, companies_bs_in_period_by_person
-from views.plots import plot_amount_assets_acquired_disposed, plot_distribution_trans_codes, plot_n_most_companies_bs, plot_n_most_companies_bs_by_person 
+from views.plots import plot_amount_assets_acquired_disposed, plot_distribution_trans_codes, plot_n_most_companies_bs, plot_n_most_companies_bs_by_person, plot_line_chart, print_chart
 from models.db import FileHelper
 from utils.utils import iterate_months
 from datetime import datetime, timedelta
@@ -85,6 +85,42 @@ class CoreController:
         df = self.get_insider_transactions(args)
         acquired_by_insider, disposed_by_insider = companies_bs_in_period_by_person(df, args.year)
         plot_n_most_companies_bs_by_person(acquired_by_insider, disposed_by_insider, args)
+
+    def do_plot_line_chart_ticker(self, args):
+        df = self.get_insider_transactions(args)
+        ticker = args.ticker
+        if not self.file.contains(ticker):
+            ohcl = self.sec_client.fetch_ticker_ohlc(ticker, args.start, args.end, '1d')
+            self.file.df_csv_dump(ticker, ohcl, index=True)
+        ohcl = self.file.df_csv_read(ticker,index_col='Date', parse_dates=True)
+        #ohcl = ohcl.drop_duplicates()
+        # check for duplicate
+        # ohcl.index.duplicated().sum()
+        # see duplicates
+        # ohcl[ohcl.index.duplicated(keep=False)]
+        #Collapse duplicate daily rows
+        ohcl = ohcl.groupby(level=0).first()
+        start_date = datetime.strptime(args.start, "%Y-%m-%d").date()
+        end_date = datetime.strptime(args.end, "%Y-%m-%d").date()
+        #df.sort_values(by=["filedAt"]), will be re-arranged after set_index
+        #df = df.set_index('filedAt')
+        #df = df.sort_index()
+        #df = df[df['issuerTicker'] == ticker]
+        ticker_filter = (df["issuerTicker"]==ticker) & \
+        (df["acquiredDisposed"]=="A") & \
+        (df["periodOfReport"].dt.date >=start_date) & \
+        (df["periodOfReport"].dt.date <=end_date) #& \
+        #(df["name"].str.contains("BERKSHIRE"))
+        #df = df.sort_index()
+        ticker_acquired = df[ticker_filter].groupby("periodOfReport")["totalValue"].sum()
+        #ticker_acquired = ticker_acquired.set_index('periodOfReport')
+        # remove time format 2022-03-14 00:00:00+00:00 -> 2022-03-14
+        ticker_acquired.index = ticker_acquired.index.tz_convert(None)
+        ticker_acquired.index.names = ['Date']        
+        #ticker_all = pd.merge(ohcl, ticker_acquired, on='Date', how='outer').fillna(0)
+        ticker_all = ohcl.join(ticker_acquired, how="outer").fillna(0)
+        #plot_line_chart(ohcl,ticker_all, args)
+        print_chart(ticker_all, f"{ticker} Stock Purchases on Daily Chart in {args.start} - {args.end}", args=args)
 
     def build_dataset(self, args):
         mapping = self.get_exchange_mapping()

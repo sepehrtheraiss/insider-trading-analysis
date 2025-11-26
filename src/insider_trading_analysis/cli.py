@@ -22,6 +22,10 @@ def handle_n_most_companies_bs_by_person(args):
     ctrl = CoreController(Config())
     ctrl.do_plot_n_most_companies_bs_by_person(args)
 
+def handle_plot_line_chart_ticker(args):
+    ctrl = CoreController(Config())
+    ctrl.do_plot_line_chart_ticker(args)
+
 def main():
     parser = argparse.ArgumentParser(prog="Insider trading analysis", description="Analyze insider trading data CSV")
     subparsers = parser.add_subparsers(dest="command", required=True)
@@ -81,6 +85,18 @@ def main():
     plot_n_most_companies_bs_by_person.add_argument("--outpath", required='--save' in sys.argv, help="path for save plot")
     plot_n_most_companies_bs_by_person.add_argument("--show", action='store_true', required=False, help="Show plot")
     plot_n_most_companies_bs_by_person.set_defaults(func=handle_n_most_companies_bs_by_person) 
+
+    # plot_line_chart with ticker 
+    plot_line_chart_ticker = plot_subparsers.add_parser("line_chart_ticker", help="plot line chart by ticker")
+    plot_line_chart_ticker.add_argument("--query", default="*:*", help="Lucene query, e.g. issuer.tradingSymbol:TSLA")
+    plot_line_chart_ticker.add_argument("--start", required=True, help="Start date YYYY-MM-DD for filedAt range")
+    plot_line_chart_ticker.add_argument("--end", required=True, help="End date YYYY-MM-DD for filedAt range")
+    plot_line_chart_ticker.add_argument("--ticker", required=True, help="ticker symbol to use")
+    plot_line_chart_ticker.add_argument("--save", action='store_true', default=False, help="Save plot")
+    plot_line_chart_ticker.add_argument("--outpath", required='--save' in sys.argv, help="path for save plot")
+    plot_line_chart_ticker.add_argument("--show", action='store_true', required=False, help="Show plot")
+    plot_line_chart_ticker.set_defaults(func=handle_plot_line_chart_ticker) 
+
     args = parser.parse_args()
     args.func(args)
 
