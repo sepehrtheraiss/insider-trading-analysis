@@ -22,9 +22,9 @@ def handle_n_most_companies_bs_by_person(args):
     ctrl = CoreController(Config())
     ctrl.do_plot_n_most_companies_bs_by_person(args)
 
-def handle_plot_line_chart_ticker(args):
+def handle_plot_acquired_disposed_line_chart(args):
     ctrl = CoreController(Config())
-    ctrl.do_plot_line_chart_ticker(args)
+    ctrl.do_plot_acquired_disposed_line_chart(args)
 
 def main():
     parser = argparse.ArgumentParser(prog="Insider trading analysis", description="Analyze insider trading data CSV")
@@ -95,7 +95,7 @@ def main():
     plot_line_chart_ticker.add_argument("--save", action='store_true', default=False, help="Save plot")
     plot_line_chart_ticker.add_argument("--outpath", required='--save' in sys.argv, help="path for save plot")
     plot_line_chart_ticker.add_argument("--show", action='store_true', required=False, help="Show plot")
-    plot_line_chart_ticker.set_defaults(func=handle_plot_line_chart_ticker) 
+    plot_line_chart_ticker.set_defaults(func=handle_plot_acquired_disposed_line_chart) 
 
     args = parser.parse_args()
     args.func(args)

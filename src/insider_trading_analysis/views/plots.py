@@ -133,27 +133,33 @@ def plot_line_chart(ohcl, args):
     if args.show:
         plt.show()
 
-def print_chart(ticker_series, title="", ylabel="Price $", args=None):
+def plot_acquired_disposed_line_chart(ticker_series, title="", ylabel="Price $", args=None):
     ax = ticker_series["Close"].plot(figsize=(20, 7))
     ax.xaxis_date()
     ax.plot(ticker_series.index, ticker_series['Close'], lw=2)
 
     max_acquired = ticker_series['totalValue'].max()
-
+    x = 0
     # draw markers onto price time series. Marker size correlates to news volume.
     for index, row in ticker_series.iterrows():
         if row['totalValue'] == 0:
             continue
 
+        x += 1
         markersize = (row['totalValue'] / max_acquired) * 25
 
         if markersize < 7:
             markersize = 7
 
+        color = 'green' if row['acquiredDisposed'] == 'A' else 'red'
+        if x == 1:
+            color = 'green'
+        if x == 2:
+            color = 'red'
         ax.plot([index], 
                 [row['Close']], 
                 marker='o', 
-                color='red', 
+                color=color, 
                 markersize=markersize)
 
         # overlay arrow pointer at largest news volume 
