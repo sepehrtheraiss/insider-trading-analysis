@@ -145,17 +145,12 @@ def plot_acquired_disposed_line_chart(ticker_series, title="", ylabel="Price $",
         if row['totalValue'] == 0:
             continue
 
-        x += 1
         markersize = (row['totalValue'] / max_acquired) * 25
 
         if markersize < 7:
             markersize = 7
 
         color = 'green' if row['acquiredDisposed'] == 'A' else 'red'
-        if x == 1:
-            color = 'green'
-        if x == 2:
-            color = 'red'
         ax.plot([index], 
                 [row['Close']], 
                 marker='o', 
@@ -188,5 +183,30 @@ def plot_acquired_disposed_line_chart(ticker_series, title="", ylabel="Price $",
     plt.tight_layout()
     if args.save:
         plt.savefig(f'{args.outpath}/{args.ticker} Daily Price Chart {args.start}-{args.end}', dpi=150)
+    if args.show:
+        plt.show()
+
+def plot_sector_stats(trades, title="", args=None):
+    df = trades.groupby([pd.Grouper(freq='Y'), "acquiredDisposed", "sector"])['totalValue'].sum()
+
+    fig, ax = plt.subplots()
+
+    unstacked = df.unstack()
+    unstacked.plot.bar(stacked=True, ax=ax, figsize=(17, 10))
+
+    ax.legend(loc=2)
+
+    ax.grid(True)
+    ax.yaxis.set_major_formatter(matplotlib.ticker.FuncFormatter(millions_formatter))
+    ax.set_xticks(range(unstacked.index.size))
+    ax.set_xticklabels([idx[0].strftime('%Y') for idx in unstacked.index])
+    ax.figure.autofmt_xdate(rotation=0, ha='center')
+    ax.set_xlabel("Year")
+    ax.set_ylabel("Amount $")
+    ax.set_title(title)
+
+    plt.tight_layout()
+    if args.save:
+        plt.savefig(f'{args.outpath}/Sector statistics{args.start}-{args.end}', dpi=150)
     if args.show:
         plt.show()

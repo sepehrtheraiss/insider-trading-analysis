@@ -8,7 +8,8 @@ from views.plots import (plot_acquired_disposed_line_chart,
                          plot_amount_assets_acquired_disposed,
                          plot_distribution_trans_codes, plot_line_chart,
                          plot_n_most_companies_bs,
-                         plot_n_most_companies_bs_by_person)
+                         plot_n_most_companies_bs_by_person,
+                         plot_sector_stats)
 
 from .analysis import (companies_bs_in_period,
                        companies_bs_in_period_by_person, total_sec_acq_dis_day)
@@ -43,6 +44,7 @@ class CoreController:
 
     def get_insider_transactions(self, args):
         file_name = f'insider_transactions.{args.query}_{args.start}_{args.end}'
+        #file_name = 'all_trades_2022_2023'
         if not self.file.contains(file_name):
             # if data.items >= 10,000 then fetch maxes out at 10k.
             # once from param becomes 10k, fetch ends. even if there's more data.
@@ -132,6 +134,22 @@ class CoreController:
         ticker_all[["Open", "High", "Low", "Close", "Volume"]].ffill()
         )
         plot_acquired_disposed_line_chart(ticker_all, f"{ticker} Stock Purchases/Sold on Daily Chart in {args.start} - {args.end}", args=args)
+
+    def do_plot_sector_statistics(self, args):
+        df = self.get_insider_transactions(args)
+        sector_trades = df[['sector', 'totalValue', 'periodOfReport', 'acquiredDisposed']].copy()
+        sector_trades = sector_trades[sector_trades["sector"] != ""]
+        sector_trades['periodOfReport'] = pd.to_datetime(sector_trades['periodOfReport'])
+        sector_trades = sector_trades.set_index('periodOfReport')
+        sector_trades.groupby([pd.Grouper(freq='Y'), "acquiredDisposed", "sector"]).head(5)
+
+        sector_trades[sector_trades["acquiredDisposed"]=="D"] \
+                    .groupby([pd.Grouper(freq='Y'), "acquiredDisposed", "sector"])['totalValue'] \
+                    .sum() \
+                    .unstack()
+
+        plot_sector_stats(sector_trades[sector_trades["acquiredDisposed"]=="A"], "Insider Buy Distribution per Sector per Year", args)
+
 
     def build_dataset(self, args):
         mapping = self.get_exchange_mapping()
