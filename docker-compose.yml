@@ -1,0 +1,19 @@
+version: '3.9'
+
+services:
+  db:
+    image: postgres:16
+    container_name: insider_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: insider
+      POSTGRES_PASSWORD: insider
+      POSTGRES_DB: insider_trading
+    ports:
+      - "5432:5432"
+    volumes:
+      - insider_db_data:/var/lib/postgresql/data
+
+volumes:
+  insider_db_data:
+

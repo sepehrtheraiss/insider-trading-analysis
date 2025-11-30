@@ -4,3 +4,7 @@ __pycache__
 *.swp
 env/
 *.txt
+# Python build artifacts
+build/
+dist/
+*.egg-info/
