@@ -5,6 +5,7 @@ from sqlalchemy import (
     Date,
     Numeric,
     BigInteger,
+    DateTime,
 )
 from sqlalchemy.orm import declarative_base
 
@@ -44,6 +45,8 @@ class InsiderTransaction(Base):
 
     period_of_report = Column(Date, index=True)
     transaction_date = Column(Date, index=True)
+    filed_at = Column(DateTime(timezone=True), index=True)
+
 
     security_title = Column(String)
     transaction_code = Column(String)

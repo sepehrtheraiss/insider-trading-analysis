@@ -2,7 +2,7 @@ from datetime import datetime, timedelta
 
 import pandas as pd
 from api.client.services.core_service import SecClient
-from models.db import FileHelper
+from models.db import DB 
 from utils.utils import iterate_months
 from views.plots import (plot_acquired_disposed_line_chart,
                          plot_amount_assets_acquired_disposed,
@@ -22,7 +22,7 @@ class CoreController:
     def __init__(self, conf):
         self.conf = conf
         self.sec_client = SecClient(conf.base_url, conf.sec_api_key)
-        self.file = FileHelper()
+        self.file = DB()
 
     def _get_insider_transactions_it_month(self, args):
         file_name = f'insider_transactions.{args.query}_{args.start}_{args.end}'
@@ -45,10 +45,10 @@ class CoreController:
     def get_insider_transactions(self, args):
         file_name = f'insider_transactions.{args.query}_{args.start}_{args.end}'
         #file_name = 'all_trades_2022_2023'
-        if not self.file.contains(file_name):
+        #if not self.file.contains(file_name):
             # if data.items >= 10,000 then fetch maxes out at 10k.
             # once from param becomes 10k, fetch ends. even if there's more data.
-            self._get_insider_transactions_it_month(args)
+        #    self._get_insider_transactions_it_month(args)
         year = int(args.start.split('-')[0])
         df = self.file.df_csv_read(file_name)
         #df["totalValue"] = pd.to_numeric(df["totalValue"], errors="coerce")
@@ -70,10 +70,10 @@ class CoreController:
 
     def get_exchange_mapping(self):
         file_name = 'exchange_mapping_nasdaq_nyse'
-        if not self.file.contains(file_name):
-            mapping = self.sec_client.fetch_exchange_mapping()
-            mapping = mapping[mapping['isDelisted'] == False]
-            self.file.df_csv_dump(file_name, mapping)
+        #if not self.file.contains(file_name):
+        #    mapping = self.sec_client.fetch_exchange_mapping()
+        #    mapping = mapping[mapping['isDelisted'] == False]
+        #    self.file.df_csv_dump(file_name, mapping)
 
         mapping = self.file.df_csv_read(file_name)
         return mapping
@@ -100,9 +100,9 @@ class CoreController:
     def do_plot_acquired_disposed_line_chart(self, args):
         df = self.get_insider_transactions(args)
         ticker = args.ticker
-        if not self.file.contains(ticker):
-            ohcl = self.sec_client.fetch_ticker_ohlc(ticker, args.start, args.end, '1d')
-            self.file.df_csv_dump(ticker, ohcl, index=True)
+        #if not self.file.contains(ticker):
+        #    ohcl = self.sec_client.fetch_ticker_ohlc(ticker, args.start, args.end, '1d')
+        #    self.file.df_csv_dump(ticker, ohcl, index=True)
 
         #Collapse duplicate daily rows
         start_date = datetime.strptime(args.start, "%Y-%m-%d").date()
