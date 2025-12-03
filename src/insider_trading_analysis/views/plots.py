@@ -32,7 +32,7 @@ def plot_amount_assets_acquired_disposed(df, args):
     acquired_yr = df.groupby(pd.Grouper(freq='Y'))['acquired'].sum()
     disposed_yr = df.groupby(pd.Grouper(freq='Y'))['disposed'].sum()
 
-    acquired_disposed_yr = pd.merge(acquired_yr, disposed_yr, on='periodOfReport', how='outer')
+    acquired_disposed_yr = pd.merge(acquired_yr, disposed_yr, on='period_of_report', how='outer')
 
     ax = acquired_disposed_yr.plot.bar(stacked=False, figsize=(15, 7), color=["#2196f3", "#ef5350"])
 
@@ -53,9 +53,9 @@ def plot_amount_assets_acquired_disposed(df, args):
 
 # Distribution of Transaction Codes
 def plot_distribution_trans_codes(df, args):
-    year_start = df.head(1)['periodOfReport'].dt.year.item()
-    year_end = df.tail(1)['periodOfReport'].dt.year.item()
-    transaction_code = df.groupby(["acquiredDisposed", "code"])['totalValue'].sum() 
+    year_start = df.head(1)['period_of_report'].dt.year.item()
+    year_end = df.tail(1)['period_of_report'].dt.year.item()
+    transaction_code = df.groupby(["acquired_disposed", "code"])['total_value'].sum() 
     ax_codes = transaction_code.plot.barh(figsize=(20,10))
     ax_codes.xaxis.set_major_formatter(matplotlib.ticker.FuncFormatter(millions_formatter))
     ax_codes.set_xlabel("Amount $")
@@ -72,14 +72,14 @@ def plot_distribution_trans_codes(df, args):
 # N companies bought/sold in a period
 def plot_n_most_companies_bs(acquired_by_ticker, disposed_by_ticker, args):
     fig, axes = plt.subplots(nrows=1, ncols=2, figsize=(20, 10))
-    ax_ac_ti = acquired_by_ticker.head(args.n).sort_values(ascending=True).plot.barh(ax=axes[0], y='issuerTicker')
+    ax_ac_ti = acquired_by_ticker.head(args.n).sort_values(ascending=True).plot.barh(ax=axes[0], y='issuer_ticker')
     ax_ac_ti.xaxis.set_major_formatter(matplotlib.ticker.FuncFormatter(millions_formatter))
     ax_ac_ti.set_xlabel("Amount $")
     ax_ac_ti.set_ylabel("Ticker")
     ax_ac_ti.set_title(f"Top {args.n} Most Bought Companies in {args.year}")
     ax_ac_ti.figure.autofmt_xdate(rotation=0, ha='center')
 
-    ax_di_ti = disposed_by_ticker.head(args.n).sort_values(ascending=True).plot.barh(ax=axes[1], y='issuerTicker')
+    ax_di_ti = disposed_by_ticker.head(args.n).sort_values(ascending=True).plot.barh(ax=axes[1], y='issuer_ticker')
     ax_di_ti.xaxis.set_major_formatter(matplotlib.ticker.FuncFormatter(millions_formatter))
     ax_di_ti.set_xlabel("Amount $")
     ax_di_ti.set_ylabel("Ticker")
@@ -138,19 +138,19 @@ def plot_acquired_disposed_line_chart(ticker_series, title="", ylabel="Price $",
     ax.xaxis_date()
     ax.plot(ticker_series.index, ticker_series['Close'], lw=2)
 
-    max_acquired = ticker_series['totalValue'].max()
+    max_acquired = ticker_series['total_value'].max()
     x = 0
     # draw markers onto price time series. Marker size correlates to news volume.
     for index, row in ticker_series.iterrows():
-        if row['totalValue'] == 0:
+        if row['total_value'] == 0:
             continue
 
-        markersize = (row['totalValue'] / max_acquired) * 25
+        markersize = (row['total_value'] / max_acquired) * 25
 
         if markersize < 7:
             markersize = 7
 
-        color = 'green' if row['acquiredDisposed'] == 'A' else 'red'
+        color = 'green' if row['acquired_disposed'] == 'A' else 'red'
         ax.plot([index], 
                 [row['Close']], 
                 marker='o', 
@@ -158,9 +158,9 @@ def plot_acquired_disposed_line_chart(ticker_series, title="", ylabel="Price $",
                 markersize=markersize)
 
         # overlay arrow pointer at largest news volume 
-        if row['totalValue'] == max_acquired:
+        if row['total_value'] == max_acquired:
             ax.annotate(
-            '\n' + "$ {:,.0f}".format(row['totalValue']),
+            '\n' + "$ {:,.0f}".format(row['total_value']),
             xy=(index, row['Close']), xycoords='data',
             xytext=(0, -30), textcoords='offset pixels',
             arrowprops=dict(arrowstyle="->", connectionstyle="arc3", color='red')
@@ -170,10 +170,10 @@ def plot_acquired_disposed_line_chart(ticker_series, title="", ylabel="Price $",
     ax.set_xlabel('Day')
     ax.set_title(title)
 
-    total_value = ticker_series['totalValue'].sum()
+    total_value = ticker_series['total_value'].sum()
     text_y_pos = (ticker_series['Close'].max() + ticker_series['Close'].min()) / 2
     ax.annotate(
-    'totalValue amount: ' + "$ {:,.0f}".format(total_value),
+    'total_value amount: ' + "$ {:,.0f}".format(total_value),
     xy=(ticker_series.index[10], text_y_pos), xycoords='data',
     xytext=(-100, -100), textcoords='offset pixels',
     )
@@ -187,7 +187,7 @@ def plot_acquired_disposed_line_chart(ticker_series, title="", ylabel="Price $",
         plt.show()
 
 def plot_sector_stats(trades, title="", args=None):
-    df = trades.groupby([pd.Grouper(freq='Y'), "acquiredDisposed", "sector"])['totalValue'].sum()
+    df = trades.groupby([pd.Grouper(freq='Y'), "acquired_disposed", "sector"])['total_value'].sum()
 
     fig, ax = plt.subplots()
 

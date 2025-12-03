@@ -51,28 +51,28 @@ class CoreController:
         #    self._get_insider_transactions_it_month(args)
         year = int(args.start.split('-')[0])
         df = self.file.df_csv_read(file_name)
-        #df["totalValue"] = pd.to_numeric(df["totalValue"], errors="coerce")
-        df["filedAt"] = pd.to_datetime(df["filedAt"], errors="coerce", utc=True)
-        df["periodOfReport"] = pd.to_datetime(df["periodOfReport"], errors="coerce", utc=True)
-        df = df[df["periodOfReport"].notna()]              # remove rows that failed conversion
-        df = df[df["periodOfReport"].dt.year >= year]      # keep only year+ filings.
-        df = df[df["filedAt"].notna()]              
-        df = df[df["filedAt"].dt.year >= year]
-        filter_all = (df["shares"] != df["pricePerShare"]) & \
-        ( (df["pricePerShare"] < 6000) | (df["shares"] == 1) ) & \
-        (df["totalValue"] > 0) & \
+        #df["total_value"] = pd.to_numeric(df["total_value"], errors="coerce")
+        df["filed_at"] = pd.to_datetime(df["filed_at"], errors="coerce", utc=True)
+        df["period_of_report"] = pd.to_datetime(df["period_of_report"], errors="coerce", utc=True)
+        df = df[df["period_of_report"].notna()]              # remove rows that failed conversion
+        df = df[df["period_of_report"].dt.year >= year]      # keep only year+ filings.
+        df = df[df["filed_at"].notna()]              
+        df = df[df["filed_at"].dt.year >= year]
+        filter_all = (df["shares"] != df["price_per_share"]) & \
+        ( (df["price_per_share"] < 6000) | (df["shares"] == 1) ) & \
+        (df["total_value"] > 0) & \
         (df["code"] != "M") & \
-        (df["issuerTicker"] != "NONE") & \
-        (df["issuerTicker"] != "N/A") & \
-        (df["issuerTicker"] != "NA") & \
-        (~df["issuerCik"].astype("Int64").isin([810893,1454510,1463208,1877939,1556801,827187])) # insider incorrectly reported share price
+        (df["issuer_ticker"] != "NONE") & \
+        (df["issuer_ticker"] != "N/A") & \
+        (df["issuer_ticker"] != "NA") & \
+        (~df["issuer_cik"].astype("Int64").isin([810893,1454510,1463208,1877939,1556801,827187])) # insider incorrectly reported share price
         return df[filter_all]
 
     def get_exchange_mapping(self):
         file_name = 'exchange_mapping_nasdaq_nyse'
         #if not self.file.contains(file_name):
         #    mapping = self.sec_client.fetch_exchange_mapping()
-        #    mapping = mapping[mapping['isDelisted'] == False]
+        #    mapping = mapping[mapping['is_delisted'] == False]
         #    self.file.df_csv_dump(file_name, mapping)
 
         mapping = self.file.df_csv_read(file_name)
@@ -107,16 +107,16 @@ class CoreController:
         #Collapse duplicate daily rows
         start_date = datetime.strptime(args.start, "%Y-%m-%d").date()
         end_date = datetime.strptime(args.end, "%Y-%m-%d").date()
-        ticker_filter = (df["issuerTicker"]==ticker) & \
-        (df["periodOfReport"].dt.date >=start_date) & \
-        (df["periodOfReport"].dt.date <=end_date) #& \
-        #ticker_acquired = df[ticker_filter].groupby("periodOfReport")["totalValue"].sum()
-        ticker_acquired = df[ticker_filter].groupby("periodOfReport").agg({
-            "totalValue": "sum",
-            "acquiredDisposed": "first"
+        ticker_filter = (df["issuer_ticker"]==ticker) & \
+        (df["period_of_report"].dt.date >=start_date) & \
+        (df["period_of_report"].dt.date <=end_date) #& \
+        #ticker_acquired = df[ticker_filter].groupby("period_of_report")["total_value"].sum()
+        ticker_acquired = df[ticker_filter].groupby("period_of_report").agg({
+            "total_value": "sum",
+            "acquired_disposed": "first"
         })
         
-        #ticker_acquired = ticker_acquired.set_index('periodOfReport')
+        #ticker_acquired = ticker_acquired.set_index('period_of_report')
         # remove time format 2022-03-14 00:00:00+00:00 -> 2022-03-14
         ticker_acquired.index = ticker_acquired.index.tz_convert(None)
         ticker_acquired.index.names = ['Date']
@@ -137,18 +137,18 @@ class CoreController:
 
     def do_plot_sector_statistics(self, args):
         df = self.get_insider_transactions(args)
-        sector_trades = df[['sector', 'totalValue', 'periodOfReport', 'acquiredDisposed']].copy()
+        sector_trades = df[['sector', 'total_value', 'period_of_report', 'acquired_disposed']].copy()
         sector_trades = sector_trades[sector_trades["sector"] != ""]
-        sector_trades['periodOfReport'] = pd.to_datetime(sector_trades['periodOfReport'])
-        sector_trades = sector_trades.set_index('periodOfReport')
-        sector_trades.groupby([pd.Grouper(freq='Y'), "acquiredDisposed", "sector"]).head(5)
+        sector_trades['period_of_report'] = pd.to_datetime(sector_trades['period_of_report'])
+        sector_trades = sector_trades.set_index('period_of_report')
+        sector_trades.groupby([pd.Grouper(freq='Y'), "acquired_disposed", "sector"]).head(5)
 
-        sector_trades[sector_trades["acquiredDisposed"]=="D"] \
-                    .groupby([pd.Grouper(freq='Y'), "acquiredDisposed", "sector"])['totalValue'] \
+        sector_trades[sector_trades["acquired_disposed"]=="D"] \
+                    .groupby([pd.Grouper(freq='Y'), "acquired_disposed", "sector"])['total_value'] \
                     .sum() \
                     .unstack()
 
-        plot_sector_stats(sector_trades[sector_trades["acquiredDisposed"]=="A"], "Insider Buy Distribution per Sector per Year", args)
+        plot_sector_stats(sector_trades[sector_trades["acquired_disposed"]=="A"], "Insider Buy Distribution per Sector per Year", args)
 
 
     def build_dataset(self, args):
@@ -156,14 +156,14 @@ class CoreController:
         filter_mapping = mapping
         ticker_symbol = args.query.split('issuer.tradingSymbol:')[-1]
         if ticker_symbol and ticker_symbol != '*:*':
-            filter_mapping = mapping[mapping['issuerTicker'] == ticker_symbol]
+            filter_mapping = mapping[mapping['issuer_ticker'] == ticker_symbol]
 
         df = self.get_insider_transactions(args)
         df = attach_mapping(df, filter_mapping)
         df = filter_valid_exchanges(df)
         df = remove_price_outliers(df)
         df = finalize(df)
-        df.sort_values(["filedAt","issuerTicker"], ascending=[False, True], inplace=True)
+        df.sort_values(["filed_at","issuer_ticker"], ascending=[False, True], inplace=True)
         print(f"Rows after cleaning: {len(df)}")
         out = args.output
         self.file.df_csv_dump(out, df)

@@ -2,22 +2,22 @@ import pandas as pd
 
 def attach_mapping(df: pd.DataFrame, mapping: pd.DataFrame) -> pd.DataFrame:
     """
-    Merge a mapping DataFrame onto the main DataFrame based on issuerTicker.
+    Merge a mapping DataFrame onto the main DataFrame based on issuer_ticker.
 
-    Performs a left join on the 'issuerTicker' column to enrich the input
+    Performs a left join on the 'issuer_ticker' column to enrich the input
     DataFrame with additional metadata (e.g., sector, company info, etc.)
     from the mapping table.
 
     Args:
         df (pd.DataFrame): Main dataset.
-        mapping (pd.DataFrame): Mapping dataset containing 'issuerTicker'.
+        mapping (pd.DataFrame): Mapping dataset containing 'issuer_ticker'.
 
     Returns:
         pd.DataFrame: Enriched DataFrame with mapping columns added.
     """    
     if df.empty:
         return df
-    out = df.merge(mapping, on="issuerTicker", how="left", suffixes=(None,None))
+    out = df.merge(mapping, on="issuer_ticker", how="left", suffixes=(None,None))
     return out
 
 def filter_valid_exchanges(df: pd.DataFrame) -> pd.DataFrame:
@@ -37,12 +37,12 @@ def filter_valid_exchanges(df: pd.DataFrame) -> pd.DataFrame:
         return df
     return df[df["exchange"].isin(["NASDAQ","NYSE"])].copy()
 
-def remove_price_outliers(df: pd.DataFrame, price_col="pricePerShare", max_price=100000) -> pd.DataFrame:
+def remove_price_outliers(df: pd.DataFrame, price_col="price_per_share", max_price=100000) -> pd.DataFrame:
     """
     Remove invalid or extreme price values from the dataset.
 
     Keeps only rows where:
-        - The security is not delisted ('isDelisted' == False),
+        - The security is not delisted ('is_delisted' == False),
         - The price column is not null,
         - The price is greater than 0 and less than `max_price`.
 
@@ -58,7 +58,7 @@ def remove_price_outliers(df: pd.DataFrame, price_col="pricePerShare", max_price
         return df
     out = df.copy()
     out = out[
-        (out['isDelisted'] == False)
+        (out['is_delisted'] == False)
         & (out[price_col].notna())
         & (out[price_col] > 0)
         & (out[price_col] < max_price)
