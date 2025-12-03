@@ -9,49 +9,64 @@ from insider_trading_analysis.database.models import ExchangeMapping
 
 
 def load_exchange_mapping(csv_path: Path) -> None:
+    print(f"Loading exchange mapping from {csv_path}")
+
     df = pd.read_csv(csv_path)
 
-    # Adjust these renames to match your actual headers if needed
+    # ----------------------------------------
+    # Rename camelCase -> snake_case
+    # ----------------------------------------
     rename_map = {
-        "Ticker": "ticker",
-        "Company Name": "company_name",
-        "Market Cap": "market_cap",
-        "IPO Year": "ipo_year",
-        "Sector": "sector",
-        "Industry": "industry",
-        "Exchange": "exchange",
+        "name": "name",
+        "issuerTicker": "issuer_ticker",
+        "cik": "cik",
+        "exchange": "exchange",
+        "isDelisted": "is_delisted",
+        "category": "category",
+        "sector": "sector",
+        "industry": "industry",
+        "sicSector": "sic_sector",
+        "sicIndustry": "sic_industry",
     }
-    df = df.rename(columns={k: v for k, v in rename_map.items() if k in df.columns})
 
+    df = df.rename(columns=rename_map)
+
+    # ----------------------------------------
+    # Boolean conversions
+    # ----------------------------------------
+    if "is_delisted" in df.columns:
+        df["is_delisted"] = df["is_delisted"].astype("boolean")
+
+    # ----------------------------------------
+    # Build ORM objects
+    # ----------------------------------------
     records = []
     for _, row in df.iterrows():
-        ticker = row.get("ticker")
-
-        # skip rows with no ticker
-        if pd.isna(ticker) or ticker is None or str(ticker).strip() == "":
-            continue
         rec = ExchangeMapping(
-            ticker=ticker,
-            company_name=row.get("company_name"),
-            market_cap=row.get("market_cap"),
-            ipo_year=row.get("ipo_year"),
+            name=row.get("name"),
+            issuer_ticker=row.get("issuer_ticker"),
+            cik=row.get("cik"),
+            exchange=row.get("exchange"),
+            is_delisted=row.get("is_delisted"),
+            category=row.get("category"),
             sector=row.get("sector"),
             industry=row.get("industry"),
-            exchange=row.get("exchange"),
+            sic_sector=row.get("sic_sector"),
+            sic_industry=row.get("sic_industry"),
         )
         records.append(rec)
 
     with Session(engine, future=True) as session:
-        # Upsert-simple: delete existing, then insert (good enough for smallish table)
-        existing_tickers = {
-            t for (t,) in session.query(ExchangeMapping.ticker).all()
-        }
-        new_tickers = {r.ticker for r in records if r.ticker is not None}
-        to_delete = existing_tickers & new_tickers
-        if to_delete:
-            session.query(ExchangeMapping).filter(
-                ExchangeMapping.ticker.in_(list(to_delete))
-            ).delete(synchronize_session=False)
+        # # Upsert-simple: delete existing, then insert (good enough for smallish table)
+        # existing_tickers = {
+        #     t for (t,) in session.query(ExchangeMapping.ticker).all()
+        # }
+        # new_tickers = {r.ticker for r in records if r.ticker is not None}
+        # to_delete = existing_tickers & new_tickers
+        # if to_delete:
+        #     session.query(ExchangeMapping).filter(
+        #         ExchangeMapping.ticker.in_(list(to_delete))
+        #     ).delete(synchronize_session=False)
 
         session.bulk_save_objects(records)
         session.commit()

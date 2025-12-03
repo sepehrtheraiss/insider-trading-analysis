@@ -1,4 +1,5 @@
 from sqlalchemy import (
+    Boolean,
     Column,
     Integer,
     String,
@@ -36,27 +37,36 @@ class InsiderTransaction(Base):
 
     id = Column(Integer, primary_key=True, autoincrement=True)
 
-    issuer_cik = Column(String, index=True)
+    filed_at = Column(DateTime(timezone=True), index=True)
+    period_of_report = Column(DateTime(timezone=True), index=True)
+    document_type = Column(String)
+
     issuer_ticker = Column(String, index=True)
+    issuer_cik = Column(String, index=True)
     issuer_name = Column(String)
 
-    reporting_owner_cik = Column(String, index=True)
-    reporting_owner_name = Column(String)
+    reporter = Column(String)
+    reporter_cik = Column(String)
 
-    period_of_report = Column(Date, index=True)
-    transaction_date = Column(Date, index=True)
-    filed_at = Column(DateTime(timezone=True), index=True)
+    is_officer = Column(Boolean)
+    officer_title = Column(String)
 
+    is_director = Column(Boolean)
+    is_ten_percent_owner = Column(Boolean)
 
-    security_title = Column(String)
-    transaction_code = Column(String)
-    acquired_disposed = Column(String)  # 'A' or 'D'
+    table = Column(String)
+    code = Column(String)
+    acquired_disposed = Column(String)
 
-    transaction_shares = Column(Numeric)
-    transaction_price_per_share = Column(Numeric)
-    transaction_value = Column(Numeric)
+    transaction_date = Column(DateTime(timezone=True), index=True)
 
-    link = Column(String)
+    shares = Column(Numeric)
+    price_per_share = Column(Numeric)
+    total_value = Column(Numeric)
+    shares_owned_following = Column(Numeric)
+
+    is_10b5_1 = Column(Boolean)
+
 
 
 # -----------------------------
@@ -68,21 +78,50 @@ class InsiderTradeRollup(Base):
 
     id = Column(Integer, primary_key=True, autoincrement=True)
 
-    ticker = Column(String, index=True)
-    company_name = Column(String)
-    company_cik = Column(String)
+    filed_at = Column(DateTime(timezone=True))
+    period_of_report = Column(DateTime(timezone=True))
+    document_type = Column(String)
 
-    reporting_owner_cik = Column(String, index=True)
-    reporting_owner_name = Column(String)
+    issuer_ticker = Column(String)
+    issuer_cik = Column(String)
+    issuer_name = Column(String)
 
-    year = Column(Integer, index=True)
+    reporter = Column(String)
+    reporter_cik = Column(String)
 
+    is_officer = Column(Boolean)
+    officer_title = Column(String)
+
+    is_director = Column(Boolean)
+    is_ten_percent_owner = Column(Boolean)
+
+    table = Column(String)
+    code = Column(String)
+    acquired_disposed = Column(String)
+
+    transaction_date = Column(DateTime(timezone=True))
+
+    shares = Column(Numeric)
+    price_per_share = Column(Numeric)
     total_value = Column(Numeric)
-    num_transactions = Column(Integer)
-    total_shares = Column(Numeric)
-    avg_price = Column(Numeric)
-    acquired_value = Column(Numeric)
-    disposed_value = Column(Numeric)
+    shares_owned_following = Column(Numeric)
+
+    is_10b5_1 = Column(Boolean)
+
+    name = Column(String)
+    cik = Column(String)
+    exchange = Column(String)
+    is_delisted = Column(Boolean)
+
+    category = Column(String)
+    sector = Column(String)
+    industry = Column(String)
+
+    sic_sector = Column(String)
+    sic_industry = Column(String)
+
+    code_simple = Column(String)
+
 
 
 # -----------------------------
@@ -92,12 +131,18 @@ class InsiderTradeRollup(Base):
 class ExchangeMapping(Base):
     __tablename__ = "exchange_mapping"
 
-    ticker = Column(String, primary_key=True)
+    id = Column(Integer, primary_key=True, autoincrement=True)
 
-    company_name = Column(String)
-    market_cap = Column(Numeric)
-    ipo_year = Column(Integer)
+    name = Column(String)
+    issuer_ticker = Column(String, index=True)
+    cik = Column(String, index=True)
+    exchange = Column(String)
+    is_delisted = Column(Boolean)
+
+    category = Column(String)
     sector = Column(String)
     industry = Column(String)
-    exchange = Column(String)
+
+    sic_sector = Column(String)
+    sic_industry = Column(String)
 
