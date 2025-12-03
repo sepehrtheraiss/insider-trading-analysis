@@ -16,3 +16,6 @@ load-insider:
 load-rollups:
 	python -m insider_trading_analysis.etl.load_insider_rollups
 
+load-ohlc:
+	python -m insider_trading_analysis.etl.load_ohlc_prices
+

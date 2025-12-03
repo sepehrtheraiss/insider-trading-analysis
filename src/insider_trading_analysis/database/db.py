@@ -1,4 +1,4 @@
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker
 
 from .config import get_settings
@@ -26,4 +26,26 @@ def init_db() -> None:
     For prod, prefer Alembic migrations.
     """
     Base.metadata.create_all(bind=engine)
+
+    # Create or replace the merged view
+    view_sql = """
+    CREATE OR REPLACE VIEW insider_rollup AS
+    SELECT
+        t.*,
+        m.name AS ticker_name,
+        m.exchange,
+        m.is_delisted,
+        m.category,
+        m.sector,
+        m.industry,
+        m.sic_sector,
+        m.sic_industry
+    FROM insider_transactions t
+    LEFT JOIN exchange_mapping m
+    ON t.issuer_ticker = m.issuer_ticker;
+    """
+
+    with engine.connect() as conn:
+        conn.execute(text(view_sql))
+        conn.commit()    
 

@@ -134,9 +134,9 @@ def plot_line_chart(ohcl, args):
         plt.show()
 
 def plot_acquired_disposed_line_chart(ticker_series, title="", ylabel="Price $", args=None):
-    ax = ticker_series["Close"].plot(figsize=(20, 7))
+    ax = ticker_series["close"].plot(figsize=(20, 7))
     ax.xaxis_date()
-    ax.plot(ticker_series.index, ticker_series['Close'], lw=2)
+    ax.plot(ticker_series.index, ticker_series['close'], lw=2)
 
     max_acquired = ticker_series['total_value'].max()
     x = 0
@@ -152,7 +152,7 @@ def plot_acquired_disposed_line_chart(ticker_series, title="", ylabel="Price $",
 
         color = 'green' if row['acquired_disposed'] == 'A' else 'red'
         ax.plot([index], 
-                [row['Close']], 
+                [row['close']], 
                 marker='o', 
                 color=color, 
                 markersize=markersize)
@@ -161,7 +161,7 @@ def plot_acquired_disposed_line_chart(ticker_series, title="", ylabel="Price $",
         if row['total_value'] == max_acquired:
             ax.annotate(
             '\n' + "$ {:,.0f}".format(row['total_value']),
-            xy=(index, row['Close']), xycoords='data',
+            xy=(index, row['close']), xycoords='data',
             xytext=(0, -30), textcoords='offset pixels',
             arrowprops=dict(arrowstyle="->", connectionstyle="arc3", color='red')
             )
@@ -171,11 +171,14 @@ def plot_acquired_disposed_line_chart(ticker_series, title="", ylabel="Price $",
     ax.set_title(title)
 
     total_value = ticker_series['total_value'].sum()
-    text_y_pos = (ticker_series['Close'].max() + ticker_series['Close'].min()) / 2
+    text_y_pos = (ticker_series['close'].max() + ticker_series['close'].min()) / 2
+    # Safe annotation index (use 10th point if exists, else use last point)
+    annot_idx = min(10, len(ticker_series.index) - 1)
+
     ax.annotate(
-    'total_value amount: ' + "$ {:,.0f}".format(total_value),
-    xy=(ticker_series.index[10], text_y_pos), xycoords='data',
-    xytext=(-100, -100), textcoords='offset pixels',
+        'total_value amount: ' + "$ {:,.0f}".format(total_value),
+        xy=(ticker_series.index[annot_idx], text_y_pos), xycoords='data',
+        xytext=(-100, -100), textcoords='offset pixels',
     )
 
     plt.setp(plt.gca().get_xticklabels(), rotation = 0, ha='center')
