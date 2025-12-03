@@ -79,7 +79,7 @@ class DB:
 
         if table == "rollups":
             return pd.read_sql(
-                "SELECT * FROM insider_trade_rollups ORDER BY year;",
+                "SELECT * FROM insider_trade_rollups ORDER BY period_of_report;",
                 engine
             )
 

@@ -43,7 +43,7 @@ class CoreController:
             #yield raw_iter
 
     def get_insider_transactions(self, args):
-        file_name = f'insider_transactions.{args.query}_{args.start}_{args.end}'
+        file_name = f'all_trades_{args.start}_{args.end}'
         #file_name = 'all_trades_2022_2023'
         #if not self.file.contains(file_name):
             # if data.items >= 10,000 then fetch maxes out at 10k.

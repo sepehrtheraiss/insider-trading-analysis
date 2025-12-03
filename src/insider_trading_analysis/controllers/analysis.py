@@ -1,14 +1,37 @@
 import pandas as pd
 
 def total_sec_acq_dis_day(df):
-    ''' calculates the total number of securities acquired and disposed per day '''
-    acquired_all = df[df["acquired_disposed"]=="A"].groupby(['period_of_report'])['total_value'].sum()
-    disposed_all = df[df["acquired_disposed"]=="D"].groupby(['period_of_report'])['total_value'].sum()
+    """
+    Calculates the total dollar value of securities acquired and disposed per day.
+    Uses snake_case column names (`acquired_disposed`, `total_value`, `period_of_report`).
+    """
 
-    acquired_disposed_all = pd.merge(acquired_all, disposed_all, on='period_of_report', how='outer')
-    acquired_disposed_all.rename(columns={'totalValue_x': 'acquired', 'totalValue_y': 'disposed'}, inplace=True)
-    acquired_disposed_all = acquired_disposed_all.sort_values(by=["period_of_report"])
-    return acquired_disposed_all
+    # Group: acquired (A)
+    acquired_all = (
+        df[df["acquired_disposed"] == "A"]
+        .groupby("period_of_report")["total_value"]
+        .sum()
+        .rename("acquired")
+    )
+
+    # Group: disposed (D)
+    disposed_all = (
+        df[df["acquired_disposed"] == "D"]
+        .groupby("period_of_report")["total_value"]
+        .sum()
+        .rename("disposed")
+    )
+
+    # Merge the two series on period_of_report
+    out = pd.concat([acquired_all, disposed_all], axis=1)
+
+    # Replace NaN with 0 for missing days
+    out = out.fillna(0)
+
+    # Sort by date
+    out = out.sort_values(by="period_of_report")
+
+    return out
 
 
 def companies_bs_in_period(df, year):
