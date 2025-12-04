@@ -8,12 +8,12 @@ services:
     environment:
       POSTGRES_USER: insider
       POSTGRES_PASSWORD: insider
-      POSTGRES_DB: insider_trading
+      POSTGRES_DB: insider_trading_etl
     ports:
       - "5432:5432"
     volumes:
-      - insider_db_data:/var/lib/postgresql/data
+      - insider_etl_db_data:/var/lib/postgresql/data
 
 volumes:
-  insider_db_data:
+  insider_elt_db_data:
 
