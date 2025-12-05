@@ -3,7 +3,7 @@ requires = ["setuptools"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "insider_trading_analysis_etl"
+name = "insider_trading_analysis"
 version = "0.1.0"
 description = "Insider trading analysis etl toolkit"
 requires-python = ">=3.9"

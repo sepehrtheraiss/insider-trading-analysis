@@ -1,25 +1,30 @@
 # insider_transactions_task.py
-from extract.insider_api_source import InsiderAPISource
-from extract.raw_writer import RawWriter
-from transform.insider_transformer import InsiderTransformer
-from load.insider_loader import InsiderLoader
-from ..utils.logger import log
+from insider_trading.extract.sources.insider_api_source import InsiderApiSource
+from insider_trading.extract.raw_writer import RawWriter
+from insider_trading.transform.insider_transformer import InsiderTransformer
+from insider_trading.load.insider_loader import InsiderLoader
+from utils.logger import Logger 
 
 
 class InsiderTransactionsTask:
     """Fetch → raw → transform → load insider transactions."""
 
-    def __init__(self, db):
+    def __init__(self, config, db):
         self.db = db
-        self.api = InsiderAPISource()
+        self.api = InsiderApiSource(config.base_url, config.api_key)
         self.raw = RawWriter()
         self.transformer = InsiderTransformer()
         self.loader = InsiderLoader(db)
+        self.log = Logger(self.__class__.__name__)
 
-    def run(self):
-        log("[TASK] Fetching insider transactions...")
-        raw_data = self.api.fetch_insider_transactions()
+    def run(self, params: dict):
+        self.log.info("[TASK] Fetching insider transactions...")
+        raw_data = self.api.fetch_insider_transactions(
+            query_string=params["query"],
+            start=params["start_date"],
+            end=params["end_date"]
+        )
         raw_path = self.raw.save("insider_transactions", raw_data)
         normalized = self.transformer.normalize(raw_data)
         self.loader.load(normalized)
-        log("[TASK] insider_transactions load complete.")
+        self.log.info("[TASK] insider_transactions load complete.")
