@@ -3,7 +3,7 @@ from ..base_api import BaseAPI
 from .decorators.ratelimiter import rate_limited
 from .decorators.backoff import backoff_retry
 
-class HttpClient(BaseAPI):
+class HttpAdapter(BaseAPI):
     """HTTP API client with rate limit & retry decorators."""
 
     def __init__(self, base_url, api_key, token=None, proxy=None, rate=30, per=60):

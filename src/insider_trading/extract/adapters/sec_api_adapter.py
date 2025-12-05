@@ -1,7 +1,7 @@
 from ..base_api import BaseAPI
 import sec_api
 
-class LibraryClient(BaseAPI):
+class SecApiAdapter(BaseAPI):
     """Library-based API client."""
 
     def __init__(self, api_key, proxy=None):
