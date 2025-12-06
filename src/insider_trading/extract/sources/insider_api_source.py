@@ -45,13 +45,11 @@ class InsiderApiSource:
                 # returns dict_keys(['total', 'transactions']) 
                 # total -> <class 'dict'>
                 # transactions -> <class 'list'> -> <class 'dict'>
-                '''
-                dict_keys(['id', 'accessionNo', 'filedAt', 'schemaVersion',
-                           'documentType', 'periodOfReport', 'notSubjectToSection16',
-                           'issuer', 'reportingOwner', 'nonDerivativeTable',
-                           'derivativeTable', 'footnotes', 'ownerSignatureName',
-                           'ownerSignatureNameDate'])
-                '''
+                # dict_keys(['id', 'accessionNo', 'filedAt', 'schemaVersion',
+                #            'documentType', 'periodOfReport', 'notSubjectToSection16',
+                #            'issuer', 'reportingOwner', 'nonDerivativeTable',
+                #            'derivativeTable', 'footnotes', 'ownerSignatureName',
+                #            'ownerSignatureNameDate'])
                 data = self._sec_api_adapter.fetch('InsiderTradingApi', 'get_data',payload)
                 txs = data.get("transactions", [])
                 if not txs:
@@ -70,12 +68,14 @@ class InsiderApiSource:
         Returns a DataFrame with columns: issuerTicker, cik, exchange, sector, industry, category, name
         """
         MAPPING_ENDPOINT = "mapping/exchange/{exchange}?token={key}"
-        frames = []
+        records = []
         for ex in exchanges:
             endpoint = MAPPING_ENDPOINT.format(exchange=ex,key=self._http_adapter.api_key)
             # dict_keys(['name', 'ticker', 'cik', 'cusip', 'exchange', 'isDelisted', 'category',
             #            'sector', 'industry', 'sic', 'sicSector', 'sicIndustry', 'famaSector',
             #            'famaIndustry', 'currency', 'location', 'id'])
             data = self._http_adapter.fetch(endpoint)
-
-        return out
+            if not data:
+                continue
+            records.extend(data)
+        return records 

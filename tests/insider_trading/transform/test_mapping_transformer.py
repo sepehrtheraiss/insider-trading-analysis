@@ -23,18 +23,18 @@ def test_clean_handles_empty_df(transformer):
     cleaned = transformer.clean(df)
 
     assert cleaned.empty
-    assert list(cleaned.columns) == transformer.KEEP
+    assert list(cleaned.columns) == transformer.SCHEMA
 
 
 def test_clean_renames_and_adds_missing_columns(transformer):
     df = pd.DataFrame([{"ticker": "AAPL", "exchange": "nasdaq"}])
     cleaned = transformer.clean(df)
 
-    assert "issuerTicker" in cleaned.columns
-    assert cleaned.loc[0, "issuerTicker"] == "AAPL"
+    assert "issuer_ticker" in cleaned.columns
+    assert cleaned.loc[0, "issuer_ticker"] == "AAPL"
 
-    # Should contain all required KEEP columns
-    assert list(cleaned.columns) == transformer.KEEP
+    # Should contain all required SCHEMA columns
+    assert list(cleaned.columns) == transformer.SCHEMA
 
     # Missing values should be None/NaN
     assert pd.isna(cleaned.loc[0, "sector"])
@@ -43,7 +43,7 @@ def test_clean_renames_and_adds_missing_columns(transformer):
 def test_dedupe_prefers_nasdaq_over_nyse(transformer):
     df = pd.DataFrame([
         {
-            "issuerTicker": "MSFT",
+            "issuer_ticker": "MSFT",
             "exchange": "nyse",
             "cik": "abc",
             "sector": "tech",
@@ -52,7 +52,7 @@ def test_dedupe_prefers_nasdaq_over_nyse(transformer):
             "name": "MSFT"
         },
         {
-            "issuerTicker": "MSFT",
+            "issuer_ticker": "MSFT",
             "exchange": "nasdaq",
             "cik": "abc",
             "sector": "tech",
@@ -83,6 +83,6 @@ def test_transform_full_pipeline(transformer):
 
     df = transformer.transform(raw)
 
-    assert list(df.columns) == transformer.KEEP
-    assert df.loc[0, "issuerTicker"] == "AAPL"
+    assert list(df.columns) == transformer.SCHEMA
+    assert df.loc[0, "issuer_ticker"] == "AAPL"
     assert len(df) == 1
