@@ -15,10 +15,10 @@ class ExchangeMappingTask:
         self.loader = MappingLoader(db)
         self.log = Logger(self.__class__.__name__)
 
-    def run(self, params: dict):
+    def run(self, params: dict = None):
         self.log.info("[TASK] Fetching exchange_mapping...")
         raw_data = self.api.fetch_exchange_mapping()
         raw_path = self.raw.save("exchange_mapping", raw_data)
-        normalized = self.transformer.normalize(raw_data)
+        normalized = self.transformer.transform(raw_data)
         self.loader.load(normalized)
         self.log.info("[TASK] exchange_mapping load complete.")

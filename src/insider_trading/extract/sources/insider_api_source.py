@@ -77,15 +77,5 @@ class InsiderApiSource:
             #            'sector', 'industry', 'sic', 'sicSector', 'sicIndustry', 'famaSector',
             #            'famaIndustry', 'currency', 'location', 'id'])
             data = self._http_adapter.fetch(endpoint)
-            df = pd.DataFrame(data)
-            if df.empty:
-                continue
-            df.drop(["cusip","sic","famaSector","famaIndustry","id", "currency", "location"], axis=1, inplace=True)
-            df.rename(columns={"ticker": "issuerTicker"}, inplace=True)
-            frames.append(df)
-            #keep = ["issuerTicker","cik","exchange","sector","industry","category","name"]
-            #frames.append(df[keep])
-        if not frames:
-            return pd.DataFrame(columns=["issuerTicker","cik","exchange","sector","industry","category","name"])
-        out = pd.concat(frames).drop_duplicates("issuerTicker")
+
         return out

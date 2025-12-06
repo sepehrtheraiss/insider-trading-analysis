@@ -17,7 +17,7 @@ class InsiderTransactionsTask:
         self.loader = InsiderLoader(db)
         self.log = Logger(self.__class__.__name__)
 
-    def run(self, params: dict):
+    def run(self, params: dict = None):
         self.log.info("[TASK] Fetching insider transactions...")
         raw_data = self.api.fetch_insider_transactions(
             query_string=params["query"],
