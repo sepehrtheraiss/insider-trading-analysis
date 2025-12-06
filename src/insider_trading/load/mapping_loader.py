@@ -1,76 +1,76 @@
 import pandas as pd
 from utils.logger import Logger
+from db.database.models import ExchangeMapping
 
 
 class ExchangeMappingLoader:
     """
-    Loads validated exchange mapping data (Gold layer) into the database.
+    Loads the fully transformed exchange mapping (dimension table)
+    into the database using UPSERT semantics.
 
     Responsibilities:
-    - Validate final schema
-    - UPSERT into DB (idempotent)
-    - Update last_updated timestamp for pipeline staleness checks
+      - Ensure DataFrame matches DB schema
+      - UPSERT by issuer_ticker (business key)
+      - Update ETL staleness metadata via ETLDatabase
     """
 
-    TABLE = "exchange_mapping"
-
-    EXPECTED_COLUMNS = [
-        "issuerTicker",
+    # Final schema must match SQLAlchemy ExchangeMapping model
+    FINAL_SCHEMA = [
+        "name",
+        "issuer_ticker",
         "cik",
         "exchange",
+        "is_delisted",
+        "category",
         "sector",
         "industry",
-        "category",
-        "name",
+        "sic_sector",
+        "sic_industry",
     ]
 
     def __init__(self, db):
+        """
+        db: ETLDatabase instance (not the read-only repository)
+        """
         self.db = db
         self.log = Logger(self.__class__.__name__)
 
     # -----------------------------------------------------------
-    # Schema validation
-    # -----------------------------------------------------------
-    def _validate(self, df: pd.DataFrame):
-        cols = list(df.columns)
+    def _validate_schema(self, df: pd.DataFrame):
+        """Ensure DataFrame exactly matches DB schema."""
+        missing = [col for col in self.FINAL_SCHEMA if col not in df.columns]
+        if missing:
+            raise ValueError(f"Loader received DataFrame missing columns: {missing}")
 
-        if cols != self.EXPECTED_COLUMNS:
-            raise ValueError(
-                f"ExchangeMappingLoader expected schema {self.EXPECTED_COLUMNS}, "
-                f"but got {cols}"
-            )
-
-    # -----------------------------------------------------------
-    # Main load function
     # -----------------------------------------------------------
     def load(self, df: pd.DataFrame):
         """
-        Perform bulk UPSERT of exchange mapping metadata.
-        Pipeline gives us a fully validated, deduped DataFrame.
+        Main loader for the exchange_mapping dimension table.
+        Performs an ORM-based UPSERT driven by issuer_ticker.
         """
 
-        # 1. Schema validation
-        self._validate(df)
-
         if df.empty:
-            self.log.warning("No mapping rows to load (df empty).")
+            self.log.warning("ExchangeMappingLoader received empty DataFrame — nothing to load.")
             return
 
-        # 2. Convert DataFrame → dict rows
-        records = df.to_dict(orient="records")
+        # 1. Validate schema
+        self._validate_schema(df)
 
-        self.log.info(f"Loading {len(records)} mapping rows into DB...")
+        # 2. Convert to list-of-dicts
+        rows = df.to_dict(orient="records")
 
-        # 3. UPSERT
-        # NOTE: We assume DB provides a repository with an upsert method.
-        # Example: db.upsert(table, rows, unique_key)
-        self.db.upsert(
-            table=self.TABLE,
-            rows=records,
-            key="issuerTicker",  # unique business key
+        self.log.info(
+            f"Loading {len(rows)} rows into 'exchange_mapping' using business-key UPSERT..."
         )
 
-        # 4. Update last_updated for pipeline freshness checks
-        self.db.set_last_updated(self.TABLE)
+        # 3. UPSERT rows (in ETLDatabase)
+        self.db.upsert(
+            model=ExchangeMapping,
+            rows=rows,
+            key="issuer_ticker",
+        )
 
-        self.log.info("Exchange mapping load complete.")
+        # 4. Update ETL staleness metadata
+        self.db.set_last_updated("exchange_mapping")
+
+        self.log.info("ExchangeMappingLoader complete.")

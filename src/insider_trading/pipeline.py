@@ -7,7 +7,6 @@ from insider_trading.extract.sources.insider_api_source import InsiderApiSource
 from insider_trading.transform.mapping_transformer import MappingTransformer
 from insider_trading.load.mapping_loader import ExchangeMappingLoader
 
-from insider_trading.extract.sources.insider_transactions_source import InsiderTransactionsSource
 from insider_trading.transform.insider_transformer import InsiderTransactionsTransformer
 from insider_trading.load.insider_loader import InsiderTransactionsLoader
 
@@ -30,7 +29,6 @@ class InsiderTradingPipeline:
 
     def __init__(self, config, db):
         self.log = Logger(self.__class__.__name__)
-
         self.config = config
         self.db = db
 
@@ -40,47 +38,66 @@ class InsiderTradingPipeline:
         self.raw_writer = RawWriter(directory="data/raw")
         self.staging_writer = StagingWriter(directory="data/staging")
 
+        # ---------------------------
+        # FINAL SCHEMAS (exact order)
+        # ---------------------------
+
         FINAL_SCHEMA_MAPPING = [
-            "issuerTicker",
+            "name",
+            "issuer_ticker",
             "cik",
             "exchange",
+            "is_delisted",
+            "category",
             "sector",
             "industry",
-            "category",
-            "name",
+            "sic_sector",
+            "sic_industry",
         ]
 
+        FINAL_SCHEMA_TRANSACTIONS = [
+            "filed_at",
+            "period_of_report",
+            "document_type",
+            "issuer_ticker",
+            "issuer_cik",
+            "issuer_name",
+            "reporter",
+            "reporter_cik",
+            "is_officer",
+            "officer_title",
+            "is_director",
+            "is_ten_percent_owner",
+            "table",
+            "code",
+            "acquired_disposed",
+            "transaction_date",
+            "shares",
+            "price_per_share",
+            "total_value",
+            "shares_owned_following",
+            "is_10b5_1",
+        ]
+
+        # Final writers
         self.final_writer_mapping = FinalWriter(
             directory="data/final",
             expected_schema=FINAL_SCHEMA_MAPPING,
-            enforce_types={
-                "issuerTicker": str,
-                "cik": str,
-                "exchange": str,
-                "sector": str,
-                "industry": str,
-                "category": str,
-                "name": str,
-            },
+            enforce_types={},  # optional strictness
             keep_history=True,
         )
-
-        # For insider transactions you will later define schema:
-        FINAL_SCHEMA_TRANSACTIONS = [
-            # fill in later based on your transaction model
-        ]
 
         self.final_writer_transactions = FinalWriter(
             directory="data/final",
             expected_schema=FINAL_SCHEMA_TRANSACTIONS,
-            enforce_types={},
+            enforce_types={},  # optional strictness
             keep_history=True,
         )
 
         # ------------------------------------------------------------
         # Exchange Mapping ETL components
         # ------------------------------------------------------------
-        self.mapping_source = InsiderApiSource(http_adapter=config.http_adapter)
+        self.mapping_source = InsiderApiSource(base_url=config.base_url, api_key=config.api_key)
         self.mapping_transformer = MappingTransformer()
         self.mapping_loader = ExchangeMappingLoader(db)
 
@@ -96,7 +113,7 @@ class InsiderTradingPipeline:
         # ------------------------------------------------------------
         # Insider Transactions ETL components
         # ------------------------------------------------------------
-        self.transactions_source = InsiderTransactionsSource(http_adapter=config.http_adapter)
+        self.transactions_source = InsiderApiSource(api_key=config.api_key)
         self.transactions_transformer = InsiderTransactionsTransformer()
         self.transactions_loader = InsiderTransactionsLoader(db)
 
@@ -114,7 +131,7 @@ class InsiderTradingPipeline:
     # ================================================================
     def mapping_is_stale(self):
         last = self.db.last_updated("exchange_mapping")
-        return not last or (datetime.now(UTC)() - last).days >= self.MAPPING_REFRESH_DAYS
+        return not last or (datetime.now(UTC) - last).days >= self.MAPPING_REFRESH_DAYS
 
     def transactions_are_stale(self):
         last = self.db.last_updated("insider_transactions")
@@ -126,22 +143,16 @@ class InsiderTradingPipeline:
     def run(self):
         self.log.info("=== InsiderTradingPipeline START ===")
 
-        # --------------------------
-        # Exchange Mapping ETL
-        # --------------------------
         if self.mapping_is_stale():
-            self.log.info("[MAPPING] Stale → refreshing")
+            self.log.info("[MAPPING] Refreshing...")
             self.mapping_task.run()
         else:
-            self.log.info("[MAPPING] Fresh → skipping")
+            self.log.info("[MAPPING] Fresh — skipping")
 
-        # --------------------------
-        # Insider Transactions ETL
-        # --------------------------
         if self.transactions_are_stale():
-            self.log.info("[TRANSACTIONS] Stale → refreshing")
+            self.log.info("[TRANSACTIONS] Refreshing...")
             self.transactions_task.run()
         else:
-            self.log.info("[TRANSACTIONS] Fresh → skipping")
+            self.log.info("[TRANSACTIONS] Fresh — skipping")
 
         self.log.info("=== InsiderTradingPipeline COMPLETE ===")

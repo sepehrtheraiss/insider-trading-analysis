@@ -1,90 +1,110 @@
 from pathlib import Path
 from datetime import datetime, UTC
+from typing import Dict, Any
+
 import pandas as pd
+from pandas.api.types import is_datetime64_any_dtype, is_datetime64tz_dtype
 
 
 class FinalWriter:
     """
-    Writes final ETL DataFrames to Parquet WITH STRICT SCHEMA VALIDATION.
-    This represents the Gold layer: validated, deduped, analytics-ready data.
+    Strict 'Gold' layer writer.
+
+    Validates DataFrame columns + types, then writes Parquet.
+
+    NEW BEHAVIOR:
+      - Extra columns are allowed (ignored)
+      - Column order is automatically corrected
     """
 
     def __init__(
         self,
-        directory="data/final",
-        expected_schema: list[str] = None,
-        enforce_types: dict[str, type] = None,
+        directory: str | Path,
+        expected_schema: list[str],
+        enforce_types: Dict[str, Any] | None = None,
         keep_history: bool = True,
     ):
-        """
-        expected_schema: required column names in order.
-        enforce_types: optional dict of COLUMN -> Python type (e.g. str, int).
-        keep_history: if False, overwrite latest file instead of timestamping.
-        """
-        self.dir = Path(directory)
-        self.expected_schema = expected_schema or []
+        self.directory = Path(directory)
+        self.directory.mkdir(parents=True, exist_ok=True)
+
+        self.expected_schema = expected_schema
         self.enforce_types = enforce_types or {}
         self.keep_history = keep_history
 
-    # --------------------------------------------------------------
-    # Schema Validation
-    # --------------------------------------------------------------
-    def _validate_schema(self, df: pd.DataFrame):
-        """Ensures df columns EXACTLY match expected schema (order + names)."""
-        df_cols = list(df.columns)
+    # ----------------------------------------------------------------------------
+    # Public API
+    # ----------------------------------------------------------------------------
+    def save(self, name: str, df: pd.DataFrame) -> Path:
+        """Validate → reorder → write parquet."""
+        self._validate_schema(df)
+        self._validate_types(df)
 
-        if df_cols != self.expected_schema:
+        # Reorder columns to canonical schema
+        df = df[self.expected_schema]
+
+        # Generate filename
+        if self.keep_history:
+            ts = datetime.now(UTC).strftime("%Y%m%d_%H%M%S")
+            filename = f"{name}_{ts}.parquet"
+        else:
+            filename = f"{name}.parquet"
+
+        path = self.directory / filename
+
+        df.to_parquet(path, index=False)
+        return path
+
+    # ----------------------------------------------------------------------------
+    # Validation
+    # ----------------------------------------------------------------------------
+    def _validate_schema(self, df: pd.DataFrame) -> None:
+        """Ensure all required columns exist (extra columns OK)."""
+        missing = [c for c in self.expected_schema if c not in df.columns]
+
+        if missing:
             raise ValueError(
                 f"[FinalWriter] Schema mismatch.\n"
                 f"Expected: {self.expected_schema}\n"
-                f"Got     : {df_cols}"
+                f"Missing:  {missing}"
             )
 
-    # --------------------------------------------------------------
-    # Optional Type Validation
-    # --------------------------------------------------------------
-    def _validate_types(self, df: pd.DataFrame):
-        """Check column element types (lightweight, optional)."""
-        for col, expected_type in self.enforce_types.items():
-            if col not in df:
-                raise ValueError(f"[FinalWriter] Missing column for type check: {col}")
+        # NOTE: do NOT check for extra columns
+        # NOTE: do NOT check column order
 
-            # Allow null values but type-check non-null ones
-            bad = df[col].dropna().map(lambda x: not isinstance(x, expected_type))
+    def _validate_types(self, df: pd.DataFrame) -> None:
+        """Strict type validation for configured columns."""
+        for col, expected in self.enforce_types.items():
 
-            if bad.any():
+            if col not in df.columns:
+                raise ValueError(f"[FinalWriter] Cannot enforce type. Missing column '{col}'.")
+
+            series = df[col]
+
+            # ----------------------------------------------------------------------
+            # Datetime with timezone enforcement: "datetime64[ns, UTC]"
+            # ----------------------------------------------------------------------
+            if expected == "datetime64[ns, UTC]":
+                if not is_datetime64_any_dtype(series.dtype):
+                    raise TypeError(f"[FinalWriter] Column '{col}' must be datetime64.")
+
+                if not is_datetime64tz_dtype(series.dtype):
+                    raise TypeError(
+                        f"[FinalWriter] Column '{col}' must be timezone-aware datetime."
+                    )
+
+                if str(series.dtype.tz) != "UTC":
+                    raise TypeError(f"[FinalWriter] Column '{col}' must be UTC timezone.")
+
+                continue
+
+            # ----------------------------------------------------------------------
+            # Python scalar types (str, float, bool, etc.)
+            # ----------------------------------------------------------------------
+            non_null = series.dropna()
+            invalid_mask = non_null.map(lambda v: not isinstance(v, expected))
+
+            if invalid_mask.any():
                 raise TypeError(
-                    f"[FinalWriter] Column '{col}' contains wrong data types.\n"
-                    f"Expected: {expected_type.__name__}\n"
-                    f"Invalid rows: {bad.sum()}"
+                    f"[FinalWriter] Column '{col}' has invalid values. "
+                    f"Expected type {expected}, got mismatches."
                 )
-
-    # --------------------------------------------------------------
-    # Save Function
-    # --------------------------------------------------------------
-    def save(self, name: str, df: pd.DataFrame):
-        if not isinstance(df, pd.DataFrame):
-            raise TypeError("FinalWriter only accepts pandas DataFrames.")
-
-        self.dir.mkdir(parents=True, exist_ok=True)
-
-        # 1. Strict schema validation
-        if self.expected_schema:
-            self._validate_schema(df)
-
-        # 2. Optional type validation
-        if self.enforce_types:
-            self._validate_types(df)
-
-        # 3. Determine filepath
-        if self.keep_history:
-            timestamp = datetime.now(UTC).strftime("%Y%m%d_%H%M%S")
-            path = self.dir / f"{name}_{timestamp}.parquet"
-        else:
-            path = self.dir / f"{name}.parquet"
-
-        # 4. Write final Parquet file
-        df.to_parquet(path, index=False)
-
-        return path
-

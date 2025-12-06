@@ -14,14 +14,14 @@ class InsiderApiSource:
     def fetch_insider_transactions(
         self,
         query_string: str,
-        start: str,
-        end: str,
+        start_date: str,
+        end_date: str,
         size: int = DEFAULT_PAGE_SIZE,
         sleep_seconds: float = 0.2,
         sort_desc: bool = True,
     ) -> Iterable[Dict[str, Any]]:
             """
-            Streams insider transactions (Forms 3/4/5) that match query_string and filedAt in [start, end].
+            Streams insider transactions (Forms 3/4/5) that match query_string and filedAt in [start_date, end_date].
             Dates are YYYY-MM-DD. Uses SEC-API InsiderTradingApi with pagination.
             e.g.
                 query_string = "issuer.tradingSymbol:TSLA"
@@ -37,7 +37,7 @@ class InsiderApiSource:
             data = 1
             while data:
                 payload = {
-                    "query": {"query_string": {"query": f"({query_string}) AND filedAt:[{start} TO {end}]"}},
+                    "query": {"query_string": {"query": f"({query_string}) AND filedAt:[{start_date} TO {end_date}]"}},
                     "from": str(frm),
                     "size": str(size),
                     "sort": sort,

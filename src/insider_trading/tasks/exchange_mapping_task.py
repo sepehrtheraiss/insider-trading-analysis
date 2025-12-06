@@ -3,7 +3,8 @@ from utils.logger import Logger
 
 class ExchangeMappingTask:
     """
-    Extract → Raw → Transform → Staging → Final → Load
+    Full medallion ETL:
+        Extract → Raw → Transform → Staging → Final → Load
     Handles exchange mapping ingestion from SEC API.
     """
 
@@ -59,7 +60,7 @@ class ExchangeMappingTask:
         self.log.info(f"[FINAL] Gold-layer Parquet saved to {final_path}")
 
         # ------------------------------------------------------
-        # 4. LOAD → Database insertion
+        # 4. LOAD → DB (append-only / slow-changing)
         # ------------------------------------------------------
         self.loader.load(df_final)
         self.log.info("[LOAD] Successfully loaded into database")
