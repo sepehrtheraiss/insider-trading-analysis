@@ -1,5 +1,3 @@
-# insider_trading/transform/normalize_transactions.py
-
 from typing import List, Sequence
 import pandas as pd
 
@@ -17,6 +15,8 @@ def normalize_transactions(transactions: Sequence[dict]) -> pd.DataFrame:
     """
     Convert raw SEC 'transactions' objects to a normalized flat DataFrame.
     Produces 1 row per transaction line-item.
+    Converts camelCase to snake_case.
+    For nested values appends _ preserving snake_case.
     """
     records: list[dict] = []
 
@@ -25,9 +25,9 @@ def normalize_transactions(transactions: Sequence[dict]) -> pd.DataFrame:
         ro = (t.get("reportingOwner") or {})
         rel = (ro.get("relationship") or {})
 
-        filed_at = t.get("filedAt") or t.get("filed_at")
-        period = t.get("periodOfReport") or t.get("period_of_report")
-        doc_type = t.get("documentType") or t.get("document_type")
+        filed_at = t.get("filedAt")
+        period = t.get("periodOfReport")
+        doc_type = t.get("documentType")
 
         # Footnotes → detect 10b5-1 plans
         fnotes = t.get("footnotes") or []
@@ -49,10 +49,10 @@ def normalize_transactions(transactions: Sequence[dict]) -> pd.DataFrame:
                 post = row.get("postTransactionAmounts") or {}
 
                 shares = amts.get("shares")
-                price = amts.get("price_per_share")
+                price = amts.get("pricePerShare")
                 code = coding.get("code")
                 ad = amts.get("acquiredDisposedCode")
-                tx_date = row.get("transaction_date")
+                tx_date = row.get("transactionDate")
                 post_sh = post.get("sharesOwnedFollowingTransaction")
 
                 try:
@@ -72,7 +72,7 @@ def normalize_transactions(transactions: Sequence[dict]) -> pd.DataFrame:
                     "reporter": ro.get("name"),
                     "reporter_cik": ro.get("cik"),
 
-                    "is_officer": rel.get("isOfficer") or rel.get("is_officer"),
+                    "is_officer": rel.get("isOfficer"),
                     "officer_title": rel.get("officerTitle"),
 
                     "is_director": rel.get("isDirector"),
@@ -92,19 +92,4 @@ def normalize_transactions(transactions: Sequence[dict]) -> pd.DataFrame:
                 })
 
     df = pd.DataFrame.from_records(records)
-
-    # Normalize types
-    if not df.empty:
-        numeric_cols = [
-            "shares", "price_per_share", "total_value", "shares_owned_following"
-        ]
-        for col in numeric_cols:
-            df[col] = pd.to_numeric(df[col], errors="coerce")
-
-        datetime_cols = [
-            "filed_at", "transaction_date", "period_of_report"
-        ]
-        for col in datetime_cols:
-            df[col] = pd.to_datetime(df[col], errors="coerce", utc=True)
-
     return df

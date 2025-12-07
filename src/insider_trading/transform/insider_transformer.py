@@ -32,24 +32,6 @@ class InsiderTransactionsTransformer:
         "is_10b5_1",
     ]
 
-    # Rename map from API → DB snake_case
-    RENAME_COLS = {
-        "issuerTicker": "issuer_ticker",
-        "issuerCik": "issuer_cik",
-        "issuerName": "issuer_name",
-        "reporterName": "reporter",
-        "reporterCik": "reporter_cik",
-        "isOfficer": "is_officer",
-        "isDirector": "is_director",
-        "isTenPercentOwner": "is_ten_percent_owner",
-        "officerTitle": "officer_title",
-        "transactionDate": "transaction_date",
-        "periodOfReport": "period_of_report",
-        "filedAt": "filed_at",
-        "pricePerShare": "price_per_share",
-        "sharesOwnedFollowing": "shares_owned_following",
-        "is10b5_1": "is_10b5_1",
-    }
 
     # -----------------------------------------------------------
     def normalize(self, raw: list[dict]) -> pd.DataFrame:
@@ -60,43 +42,49 @@ class InsiderTransactionsTransformer:
     def clean(self, df: pd.DataFrame) -> pd.DataFrame:
         """Rename columns, enforce schema, coerce timestamps & numeric values."""
 
-        # if df.empty:
-        #     return pd.DataFrame(columns=self.SCHEMA)
-
-        # # Rename API → DB fields
-        # df = df.rename(columns=self.RENAME_COLS)
-
-        # # Add missing columns
-        # for col in self.SCHEMA:
-        #     if col not in df.columns:
-        #         df[col] = None
-
-        # # Convert timestamps
-        # for col in ["filed_at", "period_of_report", "transaction_date"]:
-        #     df[col] = pd.to_datetime(df[col], errors="coerce", utc=True)
-
-        # # Convert numerics
-        # numeric_cols = [
-        #     "shares",
-        #     "price_per_share",
-        #     "total_value",
-        #     "shares_owned_following",
-        # ]
-        # for col in numeric_cols:
-        #     df[col] = pd.to_numeric(df[col], errors="coerce")
-
-        # # Restrict schema ordering
-        # df = df[self.SCHEMA]
-
-        # return df
         if df.empty:
-            return df
+            return pd.DataFrame(columns=self.SCHEMA)
 
-        # Convert to datetime
-        df["filed_at"] = pd.to_datetime(df["filed_at"], errors="coerce", utc=True)
-        df["period_of_report"] = pd.to_datetime(df["period_of_report"], errors="coerce", utc=True)
+        # Add missing columns
+        for col in self.SCHEMA:
+            if col not in df.columns:
+                df[col] = None
 
-        # Drop invalid
+        # Convert timestamps
+        for col in ["filed_at", "period_of_report", "transaction_date"]:
+            df[col] = pd.to_datetime(df[col], errors="coerce", utc=True)
+
+        # Convert numerics
+        numeric_cols = [
+            "shares",
+            "price_per_share",
+            "total_value",
+            "shares_owned_following",
+        ]
+        for col in numeric_cols:
+            df[col] = pd.to_numeric(df[col], errors="coerce")
+
+        # Restrict schema ordering
+        df = df[self.SCHEMA]
+        return df
+
+    # -----------------------------------------------------------
+    def dedupe(self, df: pd.DataFrame) -> pd.DataFrame:
+        """
+        Remove duplicate insider filings.
+        Business key is usually:
+        (issuer_ticker, reporter, transaction_date, code)
+        """
+        return df
+        # return df.drop_duplicates(
+        #     subset=["issuer_ticker", "reporter", "transaction_date", "code"],
+        #     keep="first",
+        # )
+
+    # -----------------------------------------------------------
+    def validate(self, df: pd.DataFrame) -> pd.DataFrame:
+        """strict validation rules."""
+        # Drop invalid rows
         df = df[df["period_of_report"].notna()]
         df = df[df["filed_at"].notna()]
 
@@ -113,29 +101,12 @@ class InsiderTransactionsTransformer:
         )
 
         return df[filter_all]
-    # -----------------------------------------------------------
-    def dedupe(self, df: pd.DataFrame) -> pd.DataFrame:
-        """
-        Remove duplicate insider filings.
-        Business key is usually:
-        (issuer_ticker, reporter, transaction_date, code)
-        """
-        return df.drop_duplicates(
-            subset=["issuer_ticker", "reporter", "transaction_date", "code"],
-            keep="first",
-        )
-
-    # -----------------------------------------------------------
-    def validate(self, df: pd.DataFrame) -> pd.DataFrame:
-        """Placeholder for stricter validation rules."""
-        return df
 
     # -----------------------------------------------------------
     def transform(self, raw: list[dict], staging_writer=None) -> pd.DataFrame:
         """Full ETL transform step with optional staging outputs."""
 
         df = self.normalize(raw)
-        breakpoint()
         if staging_writer:
             staging_writer.save("insider_normalized", df)
 

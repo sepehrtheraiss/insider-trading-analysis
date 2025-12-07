@@ -18,7 +18,10 @@ class MappingTransformer:
 
     # Rename map from API → DB
     RENAME_COLS = {
-        "ticker": "issuer_ticker"
+        "ticker": "issuer_ticker",
+        "isDelisted": "is_delisted",
+        "sicSector": "sic_sector",
+        "sicIndustry": "sic_industry",
     }
 
     # Columns API provides but we discard

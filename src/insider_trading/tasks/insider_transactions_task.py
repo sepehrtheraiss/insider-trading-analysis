@@ -45,7 +45,6 @@ class InsiderTransactionsTask:
             end_date: str   (YYYY-MM-DD)
         """
         self.log.info("=== InsiderTransactionsTask START ===")
-        raw_path_override = 'data/raw/insider_transactions_20251207_185328.json' 
         # ------------------------------------------------------
         # 1. EXTRACT (raw JSON from SEC API)
         # ------------------------------------------------------
