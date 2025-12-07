@@ -34,3 +34,9 @@ class RawWriter:
         path.write_text(json.dumps(data, indent=2))
 
         return path
+        
+    def load_json(self, path):
+        """Load a raw JSON file for offline/testing ETL."""
+        path = Path(path)
+        with path.open("r") as f:
+            return json.load(f)
