@@ -37,16 +37,16 @@ class OHLC(Base):
 class InsiderTransaction(Base):
     __tablename__ = "insider_transactions"
 
-    __table_args__ = (
-        # Prevent exact duplicate transactions (business key)
-        UniqueConstraint(
-            "issuer_ticker",
-            "reporter",
-            "transaction_date",
-            "code",
-            name="uq_insider_transactions_business_key",
-        ),
-    )
+    # __table_args__ = (
+    #     # Prevent exact duplicate transactions (business key)
+    #     UniqueConstraint(
+    #         "issuer_ticker",
+    #         "period_of_report",
+    #         "shares",
+    #         "price_per_share",
+    #         name="uq_insider_transactions_business_key",
+    #     ),
+    # )
 
     id = Column(Integer, primary_key=True, autoincrement=True)
 
@@ -79,59 +79,6 @@ class InsiderTransaction(Base):
     shares_owned_following = Column(Numeric)
 
     is_10b5_1 = Column(Boolean)
-
-
-# -----------------------------
-# Insider Rollups
-# -----------------------------
-class InsiderTradeRollup(Base):
-    __tablename__ = "insider_trade_rollups"
-
-    id = Column(Integer, primary_key=True, autoincrement=True)
-
-    filed_at = Column(DateTime(timezone=True))
-    period_of_report = Column(DateTime(timezone=True))
-    document_type = Column(String)
-
-    issuer_ticker = Column(String)
-    issuer_cik = Column(String)
-    issuer_name = Column(String)
-
-    reporter = Column(String)
-    reporter_cik = Column(String)
-
-    is_officer = Column(Boolean)
-    officer_title = Column(String)
-
-    is_director = Column(Boolean)
-    is_ten_percent_owner = Column(Boolean)
-
-    table = Column(String)
-    code = Column(String)
-    acquired_disposed = Column(String)
-
-    transaction_date = Column(DateTime(timezone=True))
-
-    shares = Column(Numeric)
-    price_per_share = Column(Numeric)
-    total_value = Column(Numeric)
-    shares_owned_following = Column(Numeric)
-
-    is_10b5_1 = Column(Boolean)
-
-    name = Column(String)
-    cik = Column(String)
-    exchange = Column(String)
-    is_delisted = Column(Boolean)
-
-    category = Column(String)
-    sector = Column(String)
-    industry = Column(String)
-
-    sic_sector = Column(String)
-    sic_industry = Column(String)
-
-    code_simple = Column(String)
 
 
 # -----------------------------
