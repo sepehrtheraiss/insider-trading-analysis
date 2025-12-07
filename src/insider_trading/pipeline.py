@@ -1,20 +1,20 @@
-from datetime import datetime, UTC
+from datetime import datetime, timedelta, UTC
 
 from insider_trading.tasks.exchange_mapping_task import ExchangeMappingTask
 from insider_trading.tasks.insider_transactions_task import InsiderTransactionsTask
 
 from insider_trading.extract.sources.insider_api_source import InsiderApiSource
 from insider_trading.transform.mapping_transformer import MappingTransformer
-from insider_trading.load.mapping_loader import ExchangeMappingLoader
-
 from insider_trading.transform.insider_transformer import InsiderTransactionsTransformer
-from insider_trading.load.insider_loader import InsiderTransactionsLoader
 
-from utils.logger import Logger
+from insider_trading.load.mapping_loader import ExchangeMappingLoader
+from insider_trading.load.insider_loader import InsiderTransactionsLoader
 
 from writers.raw_writer import RawWriter
 from writers.staging_writer import StagingWriter
 from writers.final_writer import FinalWriter
+
+from utils.logger import Logger
 
 
 class InsiderTradingPipeline:
@@ -137,22 +137,70 @@ class InsiderTradingPipeline:
         last = self.db.last_updated("insider_transactions")
         return not last or (datetime.now(UTC) - last).days >= self.TRANSACTION_REFRESH_DAYS
 
+
+    # ================================================================
+    #    ------------------ range computation ----------------------
+    # ================================================================
+    def _compute_transactions_window(
+        self,
+        override_start: str | None,
+        override_end: str | None,
+    ) -> tuple[str, str]:
+        """
+        Decide which [start_date, end_date] to pass to SEC API.
+
+        If overrides are provided → use them.
+        Else:
+            - if no last_updated: fetch last N days (TRANSACTION_REFRESH_DAYS)
+            - if last_updated exists: start = last_updated+1, end=today
+        """
+        today = datetime.now(UTC).date()
+
+        if override_start or override_end:
+            # Caller is explicitly telling us what range to use
+            return override_start, override_end
+
+        last = self.db.last_updated("insider_transactions")
+
+        if not last:
+            # First-time run → take last N days
+            start = (today - timedelta(days=self.TRANSACTION_REFRESH_DAYS)).isoformat()
+            end = today.isoformat()
+            return start, end
+
+        # Normal incremental refresh: from day after last_updated to today
+        start = (last.date() + timedelta(days=1)).isoformat()
+        end = today.isoformat()
+        return start, end
+
     # ================================================================
     #                           RUN PIPELINE
     # ================================================================
-    def run(self):
+    def run(self, query: str = "*:*", start_date: str | None = None, end_date: str | None = None):
         self.log.info("=== InsiderTradingPipeline START ===")
 
+        # 1) Mapping (no params)
         if self.mapping_is_stale():
-            self.log.info("[MAPPING] Refreshing...")
+            self.log.info("[MAPPING] Stale → refreshing")
             self.mapping_task.run()
         else:
-            self.log.info("[MAPPING] Fresh — skipping")
+            self.log.info("[MAPPING] Fresh → skipping")
 
-        if self.transactions_are_stale():
-            self.log.info("[TRANSACTIONS] Refreshing...")
-            self.transactions_task.run()
+        # 2) Insider transactions
+        if self.transactions_are_stale() or start_date or end_date:
+            start, end = self._compute_transactions_window(start_date, end_date)
+
+            params = {
+                "query": query,
+                "start_date": start,
+                "end_date": end,
+            }
+
+            self.log.info(
+                f"[TRANSACTIONS] Running for window: {start} → {end} (query={query})"
+            )
+            self.transactions_task.run(params)
         else:
-            self.log.info("[TRANSACTIONS] Fresh — skipping")
+            self.log.info("[TRANSACTIONS] Fresh → skipping")
 
         self.log.info("=== InsiderTradingPipeline COMPLETE ===")

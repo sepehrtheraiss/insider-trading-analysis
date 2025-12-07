@@ -1,8 +1,8 @@
 from sqlalchemy.orm import Session
 from sqlalchemy import select
 from utils.logger import Logger
-from db.database.db import engine
-from db.database.models import InsiderTransaction
+from db.db import engine
+from db.models import InsiderTransaction
 import pandas as pd
 
 

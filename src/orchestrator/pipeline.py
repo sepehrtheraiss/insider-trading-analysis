@@ -1,6 +1,6 @@
 from insider_trading.pipeline import InsiderTradingPipeline
 from config.insider_trading_config import InsiderTradingConfig
-from db.db import DB
+from db.etl_db import ETLDatabase
 from utils.logger import Logger
 
 class OrchestratorPipeline:
@@ -8,7 +8,7 @@ class OrchestratorPipeline:
         self.log = Logger(self.__class__.__name__)
 
         # Create subpipelines with config injected
-        self.insider_pipeline = InsiderTradingPipeline(InsiderTradingConfig(), DB())
+        self.insider_pipeline = InsiderTradingPipeline(InsiderTradingConfig(), ETLDatabase())
         #self.ohlc_pipeline = OhlcPipeline(config=self.ohlc_config)
 
     def run(self):

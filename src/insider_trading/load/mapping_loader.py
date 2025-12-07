@@ -1,6 +1,6 @@
 import pandas as pd
 from utils.logger import Logger
-from db.database.models import ExchangeMapping
+from db.models import ExchangeMapping
 
 
 class ExchangeMappingLoader:

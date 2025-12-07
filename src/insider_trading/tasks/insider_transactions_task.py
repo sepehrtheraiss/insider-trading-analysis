@@ -26,7 +26,8 @@ class InsiderTransactionsTask:
         self.final_writer = final_writer
 
         self.log = Logger(self.__class__.__name__)
-
+        self.DEFAULT_PARAMS: dict[str, str] = {'query_string': '*:*'}
+    
     # ----------------------------------------------------------
     # Main Task Runner
     # ----------------------------------------------------------
@@ -39,9 +40,14 @@ class InsiderTransactionsTask:
         """
         self.log.info("=== InsiderTransactionsTask START ===")
 
-        query_string = params["query_string"]
-        start_date = params["start_date"]
-        end_date= params["end_date"]
+        if params:
+            query_string = params["query_string"]
+            start_date = params["start_date"]
+            end_date= params["end_date"]
+        else:
+            query_string = self.DEFAULT_PARAMS["query_string"]
+            start_date = '' 
+            end_date=  ''
 
         # ------------------------------------------------------
         # 1. EXTRACT (raw JSON from SEC API)
