@@ -1,6 +1,9 @@
+# db/etl_db.py
 from datetime import datetime, UTC
-from sqlalchemy.orm import Session
+
 from sqlalchemy import text
+from sqlalchemy.orm import Session
+
 from utils.logger import Logger
 from .db import engine
 
@@ -8,19 +11,27 @@ from .db import engine
 class ETLDatabase:
     """
     Writable ETL database layer.
+
     Provides:
-      - ORM session
+      - last_updated(table_name)
+      - set_last_updated(table_name)
       - upsert(model, rows, key)
       - insert_many(model, rows)
-      - last_updated(table)
-      - set_last_updated(table)
     """
 
     def __init__(self):
         self.engine = engine
-        self.session = Session(self.engine, future=True)
         self.log = Logger(self.__class__.__name__)
 
+    # -----------------------------------------------------------
+    # Session helper
+    # short-lived, isolated sessions
+    # -----------------------------------------------------------
+    def _session(self) -> Session:
+        return Session(self.engine, future=True)
+
+    # -----------------------------------------------------------
+    # ETL state tracking
     # -----------------------------------------------------------
     def last_updated(self, table_name: str):
         sql = text("""
@@ -29,8 +40,10 @@ class ETLDatabase:
             WHERE table_name = :t
             LIMIT 1
         """)
-        row = self.session.execute(sql, {"t": table_name}).fetchone()
-        return row[0] if row else None
+
+        with self._session() as session:
+            row = session.execute(sql, {"t": table_name}).fetchone()
+            return row[0] if row else None
 
     def set_last_updated(self, table_name: str):
         sql = text("""
@@ -39,39 +52,57 @@ class ETLDatabase:
             ON CONFLICT (table_name)
             DO UPDATE SET last_updated = EXCLUDED.last_updated
         """)
+
         ts = datetime.now(UTC)
 
-        self.session.execute(sql, {"t": table_name, "ts": ts})
-        self.session.commit()
+        with self._session() as session:
+            session.execute(sql, {"t": table_name, "ts": ts})
+            session.commit()
 
-        self.log.info(f"Updated last_updated for '{table_name}' → {ts}")
+        self.log.info(f"[ETL_STATE] Updated last_updated for '{table_name}' → {ts}")
 
+    # -----------------------------------------------------------
+    # Generic UPSERT
     # -----------------------------------------------------------
     def upsert(self, model, rows: list[dict], key: str):
         """
-        UPSERT based on business key, using ORM logic.
+        Naive ORM-based upsert using a single-column business key.
+
+        For each row:
+          - SELECT existing by model.<key> == row[key]
+          - UPDATE fields if exists
+          - INSERT new row if not
         """
-        for row in rows:
-            existing = (
-                self.session.query(model)
-                .filter(getattr(model, key) == row[key])
-                .one_or_none()
-            )
+        if not rows:
+            return
 
-            if existing:
-                for k, v in row.items():
-                    setattr(existing, k, v)
-            else:
-                self.session.add(model(**row))
+        with self._session() as session:
+            for row in rows:
+                existing = (
+                    session.query(model)
+                    .filter(getattr(model, key) == row[key])
+                    .one_or_none()
+                )
 
-        self.session.commit()
+                if existing:
+                    for k, v in row.items():
+                        setattr(existing, k, v)
+                else:
+                    session.add(model(**row))
 
+            session.commit()
+
+    # -----------------------------------------------------------
+    # Bulk insert
     # -----------------------------------------------------------
     def insert_many(self, model, rows: list[dict]):
-        objects = [model(**r) for r in rows]
-        self.session.bulk_save_objects(objects)
-        self.session.commit()
+        """
+        Bulk insert many rows for a given SQLAlchemy model.
+        """
+        if not rows:
+            return
 
-    # -----------------------------------------------------------
-    def close(self):
-        self.session.close()
+        objects = [model(**r) for r in rows]
+        with self._session() as session:
+            session.bulk_save_objects(objects)
+            session.commit()

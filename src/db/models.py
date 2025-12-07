@@ -1,3 +1,4 @@
+# db/models.py
 from sqlalchemy import (
     Boolean,
     Column,
@@ -35,6 +36,17 @@ class OHLC(Base):
 # -----------------------------
 class InsiderTransaction(Base):
     __tablename__ = "insider_transactions"
+
+    __table_args__ = (
+        # Prevent exact duplicate transactions (business key)
+        UniqueConstraint(
+            "issuer_ticker",
+            "reporter",
+            "transaction_date",
+            "code",
+            name="uq_insider_transactions_business_key",
+        ),
+    )
 
     id = Column(Integer, primary_key=True, autoincrement=True)
 

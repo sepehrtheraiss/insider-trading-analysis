@@ -1,3 +1,4 @@
+# db/db.py
 from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker
 
@@ -22,11 +23,13 @@ SessionLocal = sessionmaker(
 
 def init_db() -> None:
     """
-    Create tables + the merged view.
+    Create all tables and supporting ETL structures.
+
+    Intended for local dev / initial setup.
+    In production, prefer Alembic migrations.
     """
     Base.metadata.create_all(bind=engine)
 
-    # Create ETL state tracking table
     create_state = """
     CREATE TABLE IF NOT EXISTS etl_state (
         table_name TEXT PRIMARY KEY,
@@ -34,7 +37,6 @@ def init_db() -> None:
     );
     """
 
-    # Create merged view
     view_sql = """
     CREATE OR REPLACE VIEW insider_rollup AS
     SELECT

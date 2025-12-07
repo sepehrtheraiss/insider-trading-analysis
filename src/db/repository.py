@@ -1,9 +1,12 @@
+# db/repository.py
 from sqlalchemy import text
-import pandas as pd
 from sqlalchemy.orm import Session
+import pandas as pd
 
+from utils.logger import Logger
 from .db import engine
 from .models import OHLC
+
 
 class InsiderRepository:
     """
@@ -15,9 +18,10 @@ class InsiderRepository:
 
     def __init__(self):
         self.engine = engine
+        self.log = Logger(self.__class__.__name__)
 
     # ---------------------------------------
-    # Raw Insider Transactions (source of truth)
+    # Raw Insider Transactions
     # ---------------------------------------
     def get_transactions(self, start=None, end=None):
         sql = "SELECT * FROM insider_transactions"
@@ -36,7 +40,7 @@ class InsiderRepository:
         return pd.read_sql(sql, self.engine, params={"start": start, "end": end})
 
     # ---------------------------------------
-    # Exchange Mapping Metadata (source of truth)
+    # Exchange Mapping Metadata
     # ---------------------------------------
     def get_mapping(self):
         sql = "SELECT * FROM exchange_mapping ORDER BY issuer_ticker"
@@ -60,15 +64,13 @@ class InsiderRepository:
         return pd.read_sql(sql, self.engine, params=params)
 
     # ---------------------------------------
-    # Merged Insider Rollup View (recommended for analytics)
+    # Merged Insider Rollup View
     # ---------------------------------------
     def get_rollup(self, start=None, end=None):
         """
         Query the SQL VIEW `insider_rollup` that merges:
         - insider_transactions
         - exchange_mapping
-
-        This is the preferred entry point for all analytics & plotting.
         """
 
         sql = "SELECT * FROM insider_rollup"
@@ -86,6 +88,9 @@ class InsiderRepository:
 
         return pd.read_sql(sql, self.engine, params={"start": start, "end": end})
 
+    # ---------------------------------------
+    # OHLC helpers
+    # ---------------------------------------
     def ohlc_exists_in_range(self, ticker: str, start: str, end: str) -> bool:
         """
         Returns True if OHLC data exists for this ticker between start and end dates.
@@ -98,16 +103,13 @@ class InsiderRepository:
               AND date <= :end
             LIMIT 1
         """)
-        params = {
-            "ticker": ticker,
-            "start": start,
-            "end": end
-        }
-        with engine.connect() as conn:
+        params = {"ticker": ticker, "start": start, "end": end}
+
+        with self.engine.connect() as conn:
             row = conn.execute(sql, params).fetchone()
             return row is not None
-        
-    def insert_ohlc_dataframe(self, df):
+
+    def insert_ohlc_dataframe(self, df: pd.DataFrame):
         """
         Insert OHLC prices into the database from a pandas DataFrame.
 
@@ -121,6 +123,7 @@ class InsiderRepository:
                 raise ValueError(f"Missing required OHLC column: {col}")
 
         # Convert date column to datetime
+        df = df.copy()
         df["date"] = pd.to_datetime(df["date"], errors="coerce", utc=True)
 
         # Drop invalid rows
@@ -146,8 +149,8 @@ class InsiderRepository:
             records.append(rec)
 
         # Bulk insert
-        with Session(engine, future=True) as session:
+        with Session(self.engine, future=True) as session:
             session.bulk_save_objects(records)
             session.commit()
 
-        print(f"Inserted {len(records)} OHLC rows.")            
+        self.log.info(f"[OHLC] Inserted {len(records)} rows into ohlc_prices.")
