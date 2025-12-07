@@ -8,3 +8,5 @@ env/
 build/
 dist/
 *.egg-info/
+*.json
+*.parquet

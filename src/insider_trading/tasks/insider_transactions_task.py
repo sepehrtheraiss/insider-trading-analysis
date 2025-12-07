@@ -53,6 +53,9 @@ class InsiderTransactionsTask:
         # 1. EXTRACT (raw JSON from SEC API)
         # ------------------------------------------------------
         raw = self.source.fetch_insider_transactions(query_string, start_date, end_date)
+        # Convert generator to list
+        # task layer is responsible for buffering before writing raw files.
+        raw = list(raw)
         self.log.info(f"[EXTRACT] Raw filings = {len(raw)}")
 
         raw_path = self.raw_writer.save("insider_transactions", raw)

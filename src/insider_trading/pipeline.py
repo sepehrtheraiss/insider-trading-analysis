@@ -191,7 +191,7 @@ class InsiderTradingPipeline:
             start, end = self._compute_transactions_window(start_date, end_date)
 
             params = {
-                "query": query,
+                "query_string": query,
                 "start_date": start,
                 "end_date": end,
             }
