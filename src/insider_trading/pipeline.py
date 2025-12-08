@@ -180,27 +180,33 @@ class InsiderTradingPipeline:
         self.log.info("=== InsiderTradingPipeline START ===")
 
         # 1) Mapping (no params)
-        if self.mapping_is_stale():
-            self.log.info("[MAPPING] Stale → refreshing")
-            self.mapping_task.run()
+        if self.config.test_mode_map:
+            self.mapping_task.run(raw_path_override=self.config.test_path_map)
         else:
-            self.log.info("[MAPPING] Fresh → skipping")
+            if self.mapping_is_stale():
+                self.log.info("[MAPPING] Stale → refreshing")
+                self.mapping_task.run()
+            else:
+                self.log.info("[MAPPING] Fresh → skipping")
 
         # 2) Insider transactions
-        if self.transactions_are_stale() or start_date or end_date:
-            start, end = self._compute_transactions_window(start_date, end_date)
-
-            params = {
-                "query_string": query,
-                "start_date": start,
-                "end_date": end,
-            }
-
-            self.log.info(
-                f"[TRANSACTIONS] Running for window: {start} → {end} (query={query})"
-            )
-            self.transactions_task.run(params)
+        if self.config.test_mode_tx:
+            self.transactions_task.run(params=None, raw_path_override=self.config.test_path_map)
         else:
-            self.log.info("[TRANSACTIONS] Fresh → skipping")
+            if self.transactions_are_stale() or start_date or end_date:
+                start, end = self._compute_transactions_window(start_date, end_date)
+
+                params = {
+                    "query_string": query,
+                    "start_date": start,
+                    "end_date": end,
+                }
+
+                self.log.info(
+                    f"[TRANSACTIONS] Running for window: {start} → {end} (query={query})"
+                )
+                self.transactions_task.run(params)
+            else:
+                self.log.info("[TRANSACTIONS] Fresh → skipping")
 
         self.log.info("=== InsiderTradingPipeline COMPLETE ===")

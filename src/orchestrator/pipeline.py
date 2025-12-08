@@ -6,9 +6,11 @@ from utils.logger import Logger
 class OrchestratorPipeline:
     def __init__(self):
         self.log = Logger(self.__class__.__name__)
-
+        config = InsiderTradingConfig()
+        config.test_mode_map = True
+        config.test_mode_tx= True
         # Create subpipelines with config injected
-        self.insider_pipeline = InsiderTradingPipeline(InsiderTradingConfig(), ETLDatabase())
+        self.insider_pipeline = InsiderTradingPipeline(config, ETLDatabase())
         #self.ohlc_pipeline = OhlcPipeline(config=self.ohlc_config)
 
     def run(self):

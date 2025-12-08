@@ -30,17 +30,37 @@ class ExchangeMappingTask:
     # ----------------------------------------------------------
     # Main Task Runner
     # ----------------------------------------------------------
-    def run(self):
-        self.log.info("=== ExchangeMappingTask START ===")
+    def run(self, params: dict = None, raw_path_override: str = None):
+        """
+        Run the exchange  ETL.
 
+        Two modes:
+        1. Normal API mode → params provided
+        2. Test mode → raw_path_override provided (skip API)
+
+        """
+        self.log.info("=== ExchangeMappingTask START ===")
         # ------------------------------------------------------
         # 1. EXTRACT (raw JSON from SEC API)
         # ------------------------------------------------------
-        raw = self.source.fetch_exchange_mapping()
-        self.log.info(f"Fetched {len(raw)} raw mapping records")
+        # ------------------------------------------------------
+        # TEST MODE: use provided raw JSON path
+        # ------------------------------------------------------
+        if raw_path_override:
+            self.log.info(f"[TEST MODE] Loading raw exchange data from {raw_path_override}")
+            raw = self.raw_writer.load_json(raw_path_override)
+        else:
+            # ------------------------------------------------------
+            # NORMAL MODE: fetch from API
+            # ------------------------------------------------------
+            raw = self.source.fetch_exchange_mapping()
+            # Convert generator to list
+            # task layer is responsible for buffering before writing raw files.
+            raw = list(raw)
+            self.log.info(f"[EXTRACT] raw mapping records = {len(raw)}")
 
-        raw_path = self.raw_writer.save("exchange_mapping", raw)
-        self.log.info(f"[RAW] Saved to {raw_path}")
+            raw_path = self.raw_writer.save("exchange_mapping", raw)
+            self.log.info(f"[RAW] Saved to {raw_path}")
 
         # ------------------------------------------------------
         # 2. TRANSFORM (normalize → clean → dedupe → validate)

@@ -26,7 +26,7 @@ class InsiderTransactionsTask:
         self.final_writer = final_writer
 
         self.log = Logger(self.__class__.__name__)
-        self.DEFAULT_PARAMS: dict[str, str] = {'query_string': '*:*'}
+        self.DEFAULT_PARAMS: dict[str, str] = {'query_string': '*:*', 'start_date': '', 'end_date': ''}
     
     # ----------------------------------------------------------
     # Main Task Runner
@@ -71,7 +71,7 @@ class InsiderTransactionsTask:
             # Convert generator to list
             # task layer is responsible for buffering before writing raw files.
             raw = list(raw)
-            self.log.info(f"[EXTRACT] Raw filings = {len(raw)}")
+            self.log.info(f"[EXTRACT] Raw filing records = {len(raw)}")
 
             raw_path = self.raw_writer.save("insider_transactions", raw)
             self.log.info(f"[RAW] Saved → {raw_path}")
@@ -81,7 +81,7 @@ class InsiderTransactionsTask:
         #    This also writes intermediate staging artifacts
         # ------------------------------------------------------
         df_final = self.transformer.transform(raw, staging_writer=self.staging_writer)
-        self.log.info(f"[TRANSFORM] Final rows = {len(df_final)}")
+        self.log.info(f"[TRANSFORM] Final row count = {len(df_final)}")
 
         # ------------------------------------------------------
         # 3. STRICT FINAL WRITE (Gold)
@@ -89,12 +89,12 @@ class InsiderTransactionsTask:
         # ------------------------------------------------------
         if self.final_writer:
             final_path = self.final_writer.save("insider_transactions_final", df_final)
-            self.log.info(f"[GOLD] Saved final parquet → {final_path}")
+            self.log.info(f"[FINAL] Gold-layer Parquet saved to {final_path}")
 
         # ----------------------------
         # 4. LOAD → DB (append-only / slow-changing)
         # ----------------------------
         self.loader.load(df_final)
-        self.log.info("[LOAD] DB load complete")
+        self.log.info("[LOAD] Successfully loaded into database")
 
         self.log.info("=== InsiderTransactionsTask COMPLETE ===")
