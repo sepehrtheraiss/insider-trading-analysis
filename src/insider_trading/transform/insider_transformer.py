@@ -87,6 +87,13 @@ class InsiderTransactionsTransformer:
         # Drop invalid rows
         df = df[df["period_of_report"].notna()]
         df = df[df["filed_at"].notna()]
+        df = df[df["price_per_share"].notna()]
+        df = df[df["code"].notna()]
+        # per-transaction basis.
+        # period_of_report gives the earliest tx.
+        # e.g. if multi tx 01,02,03 period_of_period gives 03
+        df["transaction_date"] = df["transaction_date"].fillna(df["period_of_report"])
+
 
         # Valid transaction business rules
         ignore_ciks = [810893,1454510,1463208,1877939,1556801,827187]

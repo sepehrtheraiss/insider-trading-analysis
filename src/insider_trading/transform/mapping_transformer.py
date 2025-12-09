@@ -51,6 +51,8 @@ class MappingTransformer:
             if col not in df.columns:
                 df[col] = None
 
+        # drop delisted stocks
+        df = df[df['is_delisted'] == False]
         # Safely enforce schema
         df = df[self.SCHEMA]
         return df

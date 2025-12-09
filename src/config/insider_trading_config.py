@@ -5,6 +5,8 @@ SEC_API_KEY = os.getenv("SEC_API_KEY") or os.getenv("SECAPI_KEY") or os.getenv("
 TIMEOUT = int(os.getenv("API_TIMEOUT", 10))
 DEFAULT_PAGE_SIZE = int(os.getenv("PAGE_SIZE", 50))
 BASE_URL = (os.getenv("BASE_URL", "https://api.sec-api.io")) 
+TEST_MODE_TX = os.getenv("TEST_MODE_TX", "").lower() in ("1", "true", "yes", "y")
+TEST_MODE_MAP= os.getenv("TEST_MODE_MAP", "").lower() in ("1", "true", "yes", "y")
 TEST_PATH_TX= os.getenv("TEST_PATH_TX")
 TEST_PATH_MAP= os.getenv("TEST_PATH_MAP")
 
@@ -13,8 +15,8 @@ class ConfigError(RuntimeError):
 
 class InsiderTradingConfig:
     def __init__(self): 
-        self.test_mode_tx = False
-        self.test_mode_map = False
+        self.test_mode_tx = TEST_MODE_TX
+        self.test_mode_map = TEST_MODE_MAP
 
     @property
     def test_path_tx(self):

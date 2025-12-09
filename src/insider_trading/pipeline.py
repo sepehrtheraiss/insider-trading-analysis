@@ -141,25 +141,14 @@ class InsiderTradingPipeline:
     # ================================================================
     #    ------------------ range computation ----------------------
     # ================================================================
-    def _compute_transactions_window(
-        self,
-        override_start: str | None,
-        override_end: str | None,
-    ) -> tuple[str, str]:
+    def _compute_transactions_window(self) -> tuple[str, str]:
         """
         Decide which [start_date, end_date] to pass to SEC API.
 
-        If overrides are provided → use them.
-        Else:
-            - if no last_updated: fetch last N days (TRANSACTION_REFRESH_DAYS)
-            - if last_updated exists: start = last_updated+1, end=today
+        - if no last_updated: fetch last N days (TRANSACTION_REFRESH_DAYS)
+        - if last_updated exists: start = last_updated+1, end=today
         """
         today = datetime.now(UTC).date()
-
-        if override_start or override_end:
-            # Caller is explicitly telling us what range to use
-            return override_start, override_end
-
         last = self.db.last_updated("insider_transactions")
 
         if not last:
@@ -176,7 +165,7 @@ class InsiderTradingPipeline:
     # ================================================================
     #                           RUN PIPELINE
     # ================================================================
-    def run(self, query: str = "*:*", start_date: str | None = None, end_date: str | None = None):
+    def run(self, query: str = "*:*"):
         self.log.info("=== InsiderTradingPipeline START ===")
 
         # 1) Mapping (no params)
@@ -193,15 +182,14 @@ class InsiderTradingPipeline:
         if self.config.test_mode_tx:
             self.transactions_task.run(params=None, raw_path_override=self.config.test_path_map)
         else:
-            if self.transactions_are_stale() or start_date or end_date:
-                start, end = self._compute_transactions_window(start_date, end_date)
+            if self.transactions_are_stale():
+                start, end = self._compute_transactions_window()
 
                 params = {
                     "query_string": query,
                     "start_date": start,
                     "end_date": end,
                 }
-
                 self.log.info(
                     f"[TRANSACTIONS] Running for window: {start} → {end} (query={query})"
                 )

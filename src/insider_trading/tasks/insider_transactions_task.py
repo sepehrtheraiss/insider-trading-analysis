@@ -26,7 +26,6 @@ class InsiderTransactionsTask:
         self.final_writer = final_writer
 
         self.log = Logger(self.__class__.__name__)
-        self.DEFAULT_PARAMS: dict[str, str] = {'query_string': '*:*', 'start_date': '', 'end_date': ''}
     
     # ----------------------------------------------------------
     # Main Task Runner
@@ -58,14 +57,9 @@ class InsiderTransactionsTask:
             # ------------------------------------------------------
             # NORMAL MODE: fetch from API
             # ------------------------------------------------------
-            if params:
-                query_string = params["query_string"]
-                start_date = params["start_date"]
-                end_date= params["end_date"]
-            else:
-                query_string = self.DEFAULT_PARAMS["query_string"]
-                start_date = '' 
-                end_date=  ''
+            query_string = params["query_string"]
+            start_date = params["start_date"]
+            end_date= params["end_date"]
 
             raw = self.source.fetch_insider_transactions(query_string, start_date, end_date)
             # Convert generator to list
@@ -73,7 +67,7 @@ class InsiderTransactionsTask:
             raw = list(raw)
             self.log.info(f"[EXTRACT] Raw filing records = {len(raw)}")
 
-            raw_path = self.raw_writer.save("insider_transactions", raw)
+            raw_path = self.raw_writer.save(f"insider_transactions_{start_date}_{end_date}", raw)
             self.log.info(f"[RAW] Saved → {raw_path}")
 
         # ------------------------------------------------------
