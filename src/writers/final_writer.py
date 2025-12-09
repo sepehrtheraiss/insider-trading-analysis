@@ -11,10 +11,6 @@ class FinalWriter:
     Strict 'Gold' layer writer.
 
     Validates DataFrame columns + types, then writes Parquet.
-
-    NEW BEHAVIOR:
-      - Extra columns are allowed (ignored)
-      - Column order is automatically corrected
     """
 
     def __init__(
