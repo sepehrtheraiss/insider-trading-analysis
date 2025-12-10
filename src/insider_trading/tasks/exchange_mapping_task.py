@@ -30,7 +30,7 @@ class ExchangeMappingTask:
     # ----------------------------------------------------------
     # Main Task Runner
     # ----------------------------------------------------------
-    def run(self, params: dict = None, raw_path_override: str = None):
+    def run(self, params: dict | None = None, raw_path_override: str = None):
         """
         Run the exchange  ETL.
 

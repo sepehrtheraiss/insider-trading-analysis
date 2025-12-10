@@ -32,12 +32,6 @@ class InsiderTradingPipeline:
         self.config = config
         self.db = db
 
-        # ------------------------------------------------------------
-        # Writers (Bronze → Silver → Gold)
-        # ------------------------------------------------------------
-        self.raw_writer = RawWriter(directory="data/raw")
-        self.staging_writer = StagingWriter(directory="data/staging")
-
         # ---------------------------
         # FINAL SCHEMAS (exact order)
         # ---------------------------
@@ -78,7 +72,11 @@ class InsiderTradingPipeline:
             "shares_owned_following",
             "is_10b5_1",
         ]
-
+        # ------------------------------------------------------------
+        # Writers (Bronze → Silver → Gold)
+        # ------------------------------------------------------------
+        self.raw_writer = RawWriter(directory="data/raw")
+        self.staging_writer = StagingWriter(directory="data/staging")
         # Final writers
         self.final_writer_mapping = FinalWriter(
             directory="data/final",
