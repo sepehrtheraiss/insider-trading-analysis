@@ -1,11 +1,6 @@
 from datetime import datetime
 from dateutil.relativedelta import relativedelta
 
-# Prettify y axis: 2000000 to $2M
-def millions_formatter(x,y=0):
-    return '$ {:,.0f} M'.format(x*1e-6)
-
-
 def iterate_months(start_date: str, end_date: str):
     """Yield (month_start, month_end) tuples from start_date to end_date inclusive."""
     current = datetime.strptime(start_date, "%Y-%m-%d")

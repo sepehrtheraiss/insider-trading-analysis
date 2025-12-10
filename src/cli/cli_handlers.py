@@ -1,23 +1,26 @@
 # business logic
+from analytics.plot_service import PlotDatasetBuilder
+from analytics.plots import (
+    plot_amount_assets_acquired_disposed,
+    plot_distribution_trans_codes,
+    plot_n_most_companies_bs,
+    plot_n_most_companies_bs_by_person,
+    plot_line_chart,
+    plot_sector_stats,
+)
+from analytics.analysis import (companies_bs_in_period,
+                                companies_bs_in_period_by_person,
+                                distribution_by_codes, sector_stats_by_year,
+                                total_sec_acq_dis_day)
 from config.insider_trading_config import InsiderTradingConfig
-from db.etl_db import ETLDatabase# adjust to your actual DB factory
-from insider_trading.pipeline import InsiderTradingPipeline
+from db.etl_db import ETLDatabase
+from db.repository import InsiderRepository
 from insider_trading.extract.sources.insider_api_source import InsiderApiSource
+from insider_trading.pipeline import InsiderTradingPipeline
+from utils.logger import Logger
 from writers.raw_writer import RawWriter
 
-from analytics.plot_service import PlotService  # or analytics.plotting.* tasks
-from utils.logger import Logger
-
-
 log = Logger(__name__)
-
-
-def _make_config_and_db():
-    config = InsiderTradingConfig()
-    db = None#get_db(config)  # or however you create your DB/session
-    return config, db
-
-
 # ─────────────────────────
 # ETL HANDLERS
 # ─────────────────────────
@@ -63,7 +66,6 @@ def handle_build_dataset(raw_path: str):
 
 # ─────────────────────────
 # PLOT HANDLERS
-# You can later refactor these to dedicated plot Task classes
 # ─────────────────────────
 
 def _require_outpath_if_saved(save: bool, outpath: str | None):
@@ -73,20 +75,37 @@ def _require_outpath_if_saved(save: bool, outpath: str | None):
     return outpath
 
 
-def handle_plot_amount_assets_acquired_disposed(
-    ticker: str,
-    start: str,
-    end: str,
-    save: bool,
-    outpath: str | None,
-    show: bool,
-):
-    config, db = _make_config_and_db()
-    outpath = _require_outpath_if_saved(save, outpath)
+# --------------------------
+# Plotting handlers
+# --------------------------
 
-    svc = PlotService(config=config, db=db)
-    return svc.plot_amount_assets_acquired_disposed(
-        ticker=ticker,
+builder = PlotDatasetBuilder()
+
+def handle_plot_amount_assets(ticker, start, end, save, outpath, show):
+    db = InsiderRepository()
+    df = db.get_transactions(start, end)
+
+    # BUSINESS LOGIC (analysis layer)
+    dataset = total_sec_acq_dis_day(df)
+
+    # RENDERING (plotting layer)
+    plot_amount_assets_acquired_disposed(
+        dataset,
+        save=save,
+        outpath=outpath,
+        show=show,
+        start=start,
+        end=end,
+    )
+
+def handle_plot_distribution_codes(ticker, start, end, save, outpath, show):
+    db = InsiderRepository()
+    df = db.get_transactions(start, end)
+
+    dataset = distribution_by_codes(df)
+
+    plot_distribution_trans_codes(
+        dataset,
         start=start,
         end=end,
         save=save,
@@ -94,122 +113,65 @@ def handle_plot_amount_assets_acquired_disposed(
         show=show,
     )
 
+def handle_plot_n_companies(ticker, start, end, year, n, save, outpath, show):
+    db = InsiderRepository()
+    df = db.get_transactions(start, end)
 
-def handle_plot_distribution_trans_codes(
-    ticker: str,
-    start: str,
-    end: str,
-    save: bool,
-    outpath: str | None,
-    show: bool,
-):
-    config, db = _make_config_and_db()
-    outpath = _require_outpath_if_saved(save, outpath)
+    acquired, disposed = companies_bs_in_period(df, year)
 
-    svc = PlotService(config=config, db=db)
-    return svc.plot_distribution_trans_codes(
-        ticker=ticker,
-        start=start,
-        end=end,
-        save=save,
-        outpath=outpath,
-        show=show,
-    )
-
-
-def handle_plot_n_most_companies_bs(
-    ticker: str,
-    start: str,
-    end: str,
-    year: int,
-    n: int,
-    save: bool,
-    outpath: str | None,
-    show: bool,
-):
-    config, db = _make_config_and_db()
-    outpath = _require_outpath_if_saved(save, outpath)
-
-    svc = PlotService(config=config, db=db)
-    return svc.plot_n_most_companies_bs(
-        ticker=ticker,
-        start=start,
-        end=end,
+    plot_n_most_companies_bs(
+        acquired=acquired,
+        disposed=disposed,
         year=year,
         n=n,
         save=save,
         outpath=outpath,
         show=show,
-    )
-
-
-def handle_plot_n_most_companies_bs_by_person(
-    ticker: str,
-    start: str,
-    end: str,
-    year: int,
-    n: int,
-    save: bool,
-    outpath: str | None,
-    show: bool,
-):
-    config, db = _make_config_and_db()
-    outpath = _require_outpath_if_saved(save, outpath)
-
-    svc = PlotService(config=config, db=db)
-    return svc.plot_n_most_companies_bs_by_person(
-        ticker=ticker,
         start=start,
         end=end,
+    )
+
+def handle_plot_n_companies_person(ticker, start, end, year, n, save, outpath, show):
+    db = InsiderRepository()
+    df = db.get_transactions(start, end)
+
+    acquired, disposed = companies_bs_in_period_by_person(df, year)
+
+    plot_n_most_companies_bs_by_person(
+        acquired=acquired,
+        disposed=disposed,
         year=year,
         n=n,
         save=save,
         outpath=outpath,
         show=show,
-    )
-
-
-def handle_plot_acquired_disposed_line_chart_ticker(
-    ticker: str,
-    start: str,
-    end: str,
-    ticker: str,
-    save: bool,
-    outpath: str | None,
-    show: bool,
-):
-    config, db = _make_config_and_db()
-    outpath = _require_outpath_if_saved(save, outpath)
-
-    svc = PlotService(config=config, db=db)
-    return svc.plot_acquired_disposed_line_chart_ticker(
-        ticker=ticker,
         start=start,
         end=end,
+    )
+
+def handle_plot_line_chart(ticker, start, end, save, outpath, show):
+    db = InsiderRepository()
+    df = db.get_ohlc(ticker, start, end)
+
+    plot_line_chart(
+        df,
         ticker=ticker,
         save=save,
         outpath=outpath,
         show=show,
     )
 
+def handle_plot_sector_stats(ticker, start, end, save, outpath, show):
+    db = InsiderRepository()
+    df = db.get_rollup(start, end)
 
-def handle_plot_sector_statistics(
-    ticker: str,
-    start: str,
-    end: str,
-    save: bool,
-    outpath: str | None,
-    show: bool,
-):
-    config, db = _make_config_and_db()
-    outpath = _require_outpath_if_saved(save, outpath)
+    dataset = sector_stats_by_year(df)
 
-    svc = PlotService(config=config, db=db)
-    return svc.plot_sector_statistics(
-        ticker=ticker,
-        start=start,
-        end=end,
+    plot_sector_stats(
+        dataset,
         save=save,
         outpath=outpath,
         show=show,
+        start=start,
+        end=end,
     )

@@ -1,13 +1,6 @@
-import pandas as pd
-import matplotlib
 import matplotlib.pyplot as plt
-import matplotlib.dates as mdates
-
-from utils.utils import millions_formatter
-
-import matplotlib
-import matplotlib.pyplot as plt
-import matplotlib.dates as mdates
+import matplotlib.ticker as mtick
+from .present import millions_formatter
 
 plt.style.use('seaborn-v0_8')
 #plt.style.use('seaborn-v0_8-darkgrid')
@@ -26,190 +19,260 @@ params = {'legend.fontsize': '14',
 
 plt.rcParams.update(params)
 
-def plot_amount_assets_acquired_disposed(df, args):
-    df.index = pd.to_datetime(df.index)
+# =====================================================================
+# 1. Acquired / Disposed Per Year
+# =====================================================================
 
-    acquired_yr = df.groupby(pd.Grouper(freq='Y'))['acquired'].sum()
-    disposed_yr = df.groupby(pd.Grouper(freq='Y'))['disposed'].sum()
+def plot_amount_assets_acquired_disposed(
+    df,
+    *,
+    save=False,
+    outpath=None,
+    show=False,
+    start=None,
+    end=None
+):
+    """
+    df columns: ['acquired', 'disposed']
+    index: DatetimeIndex grouped by year
+    """
 
-    acquired_disposed_yr = pd.merge(acquired_yr, disposed_yr, on='period_of_report', how='outer')
-
-    ax = acquired_disposed_yr.plot.bar(stacked=False, figsize=(15, 7), color=["#2196f3", "#ef5350"])
-
-    ax.grid(True)
-    ax.yaxis.set_major_formatter(matplotlib.ticker.FuncFormatter(millions_formatter))
-    ax.set_xticks(range(acquired_disposed_yr.index.size))
-    ax.set_xticklabels([ts.strftime('%Y') for idx, ts in enumerate(acquired_disposed_yr.index)])
-    ax.set_xlabel("Year")
-    ax.set_ylabel("Amount $")
-    ax.set_title("Acquired/Disposed per Year")
-    ax.figure.autofmt_xdate(rotation=0, ha='center')
-
-    plt.tight_layout()
-    if args.save:
-        plt.savefig(f'{args.outpath}/amount of assets acquired and disposed {args.start}-{args.end}', dpi=150)
-    if args.show:
-        plt.show()
-
-# Distribution of Transaction Codes
-def plot_distribution_trans_codes(df, args):
-    year_start = df.head(1)['period_of_report'].dt.year.item()
-    year_end = df.tail(1)['period_of_report'].dt.year.item()
-    transaction_code = df.groupby(["acquired_disposed", "code"])['total_value'].sum() 
-    ax_codes = transaction_code.plot.barh(figsize=(20,10))
-    ax_codes.xaxis.set_major_formatter(matplotlib.ticker.FuncFormatter(millions_formatter))
-    ax_codes.set_xlabel("Amount $")
-    ax_codes.set_ylabel("Transaction Code")
-    ax_codes.set_title(f"Distribution of Transaction Codes ({year_start} - {year_end})")
-    ax_codes.figure.autofmt_xdate(rotation=0, ha='center')
-
-    plt.tight_layout()
-    if args.save:
-        plt.savefig(f'{args.outpath}/Distribution of Transaction Codes {args.start}-{args.end}', dpi=150)
-    if args.show:
-        plt.show()
-
-# N companies bought/sold in a period
-def plot_n_most_companies_bs(acquired_by_ticker, disposed_by_ticker, args):
-    fig, axes = plt.subplots(nrows=1, ncols=2, figsize=(20, 10))
-    ax_ac_ti = acquired_by_ticker.head(args.n).sort_values(ascending=True).plot.barh(ax=axes[0], y='issuer_ticker')
-    ax_ac_ti.xaxis.set_major_formatter(matplotlib.ticker.FuncFormatter(millions_formatter))
-    ax_ac_ti.set_xlabel("Amount $")
-    ax_ac_ti.set_ylabel("Ticker")
-    ax_ac_ti.set_title(f"Top {args.n} Most Bought Companies in {args.year}")
-    ax_ac_ti.figure.autofmt_xdate(rotation=0, ha='center')
-
-    ax_di_ti = disposed_by_ticker.head(args.n).sort_values(ascending=True).plot.barh(ax=axes[1], y='issuer_ticker')
-    ax_di_ti.xaxis.set_major_formatter(matplotlib.ticker.FuncFormatter(millions_formatter))
-    ax_di_ti.set_xlabel("Amount $")
-    ax_di_ti.set_ylabel("Ticker")
-    ax_di_ti.set_title(f"Top {args.n} Most Sold Companies in {args.year}")
-    ax_di_ti.figure.autofmt_xdate(rotation=0, ha='center')
-
-    fig.tight_layout()
-    if args.save:
-        plt.savefig(f'{args.outpath}/Top {args.n} companies bought & sold in {args.start}-{args.end}', dpi=150)
-    if args.show:
-        plt.show()
-
-
-def name_formatter(tup):
-  name, ticker = tup
-  name = name[:30] + '..' if len(name) > 30 else name
-  return (name, ticker)
-
-def plot_n_most_companies_bs_by_person(acquired_by_ticker, disposed_by_ticker, args):
-    acquired_by_ticker.index = acquired_by_ticker.index.map(name_formatter)
-    disposed_by_ticker.index = disposed_by_ticker.index.map(name_formatter)
-    fig, axes = plt.subplots(nrows=1, ncols=2, figsize=(20, 10))
-
-    ax_ac_in = acquired_by_ticker.head(10).sort_values(ascending=True).plot.barh(ax=axes[0], y='reportingPerson')
-    ax_ac_in.xaxis.set_major_formatter(matplotlib.ticker.FuncFormatter(millions_formatter))
-    ax_ac_in.set_xlabel("Amount $")
-    ax_ac_in.set_ylabel("Insider, Ticker")
-    ax_ac_in.set_title(f"Top {args.n} Largest Buyers in {args.year}")
-    ax_ac_in.figure.autofmt_xdate(rotation=0, ha='center')
-
-    ax_di_in = disposed_by_ticker.head(10).sort_values(ascending=True).plot.barh(ax=axes[1], y='reportingPerson')
-    ax_di_in.xaxis.set_major_formatter(matplotlib.ticker.FuncFormatter(millions_formatter))
-    ax_di_in.set_xlabel("Amount $")
-    ax_di_in.set_ylabel("Insider, Ticker")
-    ax_di_in.set_title(f"Top {args.n} Largest Sellers {args.year}")
-    ax_di_in.figure.autofmt_xdate(rotation=0, ha='center')
-
-    fig.tight_layout()
-    if args.save:
-        plt.savefig(f'{args.outpath}/Top {args.n} companies bought & sold by insider {args.start}-{args.end}', dpi=150)
-    if args.show:
-        plt.show()
-
-def plot_line_chart(ohcl, args):
-
-    ohcl["Close"].plot(xlabel="Date", ylabel="Price $", title=f"{args.ticker} Daily Price Chart", figsize=(15,7))
-         
-    plt.tight_layout()
-    if args.save:
-        plt.savefig(f'{args.outpath}/{args.ticker} Daily Price Chart {args.start}-{args.end}', dpi=150)
-    if args.show:
-        plt.show()
-
-def plot_acquired_disposed_line_chart(ticker_series, title="", ylabel="Price $", args=None):
-    ax = ticker_series["close"].plot(figsize=(20, 7))
-    ax.xaxis_date()
-    ax.plot(ticker_series.index, ticker_series['close'], lw=2)
-
-    max_acquired = ticker_series['total_value'].max()
-    x = 0
-    # draw markers onto price time series. Marker size correlates to news volume.
-    for index, row in ticker_series.iterrows():
-        if row['total_value'] == 0:
-            continue
-
-        markersize = (row['total_value'] / max_acquired) * 25
-
-        if markersize < 7:
-            markersize = 7
-
-        color = 'green' if row['acquired_disposed'] == 'A' else 'red'
-        ax.plot([index], 
-                [row['close']], 
-                marker='o', 
-                color=color, 
-                markersize=markersize)
-
-        # overlay arrow pointer at largest news volume 
-        if row['total_value'] == max_acquired:
-            ax.annotate(
-            '\n' + "$ {:,.0f}".format(row['total_value']),
-            xy=(index, row['close']), xycoords='data',
-            xytext=(0, -30), textcoords='offset pixels',
-            arrowprops=dict(arrowstyle="->", connectionstyle="arc3", color='red')
-            )
-
-    ax.set_ylabel(ylabel)
-    ax.set_xlabel('Day')
-    ax.set_title(title)
-
-    total_value = ticker_series['total_value'].sum()
-    text_y_pos = (ticker_series['close'].max() + ticker_series['close'].min()) / 2
-    # Safe annotation index (use 10th point if exists, else use last point)
-    annot_idx = min(10, len(ticker_series.index) - 1)
-
-    ax.annotate(
-        'total_value amount: ' + "$ {:,.0f}".format(total_value),
-        xy=(ticker_series.index[annot_idx], text_y_pos), xycoords='data',
-        xytext=(-100, -100), textcoords='offset pixels',
+    ax = df.plot.bar(
+        figsize=(15, 7),
+        stacked=False,
+        color=["#2196f3", "#ef5350"]
     )
 
-    plt.setp(plt.gca().get_xticklabels(), rotation = 0, ha='center')
-
-    plt.tight_layout()
-    if args.save:
-        plt.savefig(f'{args.outpath}/{args.ticker} Daily Price Chart {args.start}-{args.end}', dpi=150)
-    if args.show:
-        plt.show()
-
-def plot_sector_stats(trades, title="", args=None):
-    df = trades.groupby([pd.Grouper(freq='Y'), "acquired_disposed", "sector"])['total_value'].sum()
-
-    fig, ax = plt.subplots()
-
-    unstacked = df.unstack()
-    unstacked.plot.bar(stacked=True, ax=ax, figsize=(17, 10))
-
-    ax.legend(loc=2)
-
     ax.grid(True)
-    ax.yaxis.set_major_formatter(matplotlib.ticker.FuncFormatter(millions_formatter))
-    ax.set_xticks(range(unstacked.index.size))
-    ax.set_xticklabels([idx[0].strftime('%Y') for idx in unstacked.index])
-    ax.figure.autofmt_xdate(rotation=0, ha='center')
+    ax.yaxis.set_major_formatter(mtick.FuncFormatter(millions_formatter))
     ax.set_xlabel("Year")
     ax.set_ylabel("Amount $")
-    ax.set_title(title)
+    ax.set_title("Acquired / Disposed per Year")
+    ax.set_xticks(range(len(df.index)))
+    ax.set_xticklabels([ts.strftime("%Y") for ts in df.index])
+    ax.figure.autofmt_xdate(rotation=0, ha='center')
 
     plt.tight_layout()
-    if args.save:
-        plt.savefig(f'{args.outpath}/Sector statistics{args.start}-{args.end}', dpi=150)
-    if args.show:
+
+    if save and outpath:
+        plt.savefig(f"{outpath}/amount_assets_{start}_{end}.png", dpi=150)
+    if show:
         plt.show()
+
+
+
+# =====================================================================
+# 2. Distribution of Transaction Codes
+# =====================================================================
+
+def plot_distribution_trans_codes(
+    series,
+    *,
+    save=False,
+    outpath=None,
+    show=False,
+    start=None,
+    end=None
+):
+    """
+    series index: MultiIndex (acquired_disposed, code)
+    series values: total_value
+    """
+
+    ax = series.plot.barh(figsize=(20, 10))
+    ax.xaxis.set_major_formatter(mtick.FuncFormatter(millions_formatter))
+
+    ax.set_xlabel("Amount $")
+    ax.set_ylabel("Transaction Code")
+    ax.set_title(f"Distribution of Transaction Codes ({start} → {end})")
+
+    plt.tight_layout()
+
+    if save and outpath:
+        plt.savefig(f"{outpath}/distribution_codes_{start}_{end}.png", dpi=150)
+    if show:
+        plt.show()
+
+
+
+# =====================================================================
+# 3. Top N Companies Bought / Sold
+# =====================================================================
+
+def plot_n_most_companies_bs(
+    acquired,
+    disposed,
+    *,
+    year,
+    n,
+    save=False,
+    outpath=None,
+    show=False,
+    start=None,
+    end=None
+):
+    """
+    acquired: Series indexed by issuer_ticker
+    disposed: same structure
+    """
+
+    fig, axes = plt.subplots(1, 2, figsize=(20, 10))
+
+    # LEFT — ACQUIRED
+    axA = acquired.head(n).sort_values().plot.barh(
+        ax=axes[0], color="#2196f3"
+    )
+    axA.xaxis.set_major_formatter(mtick.FuncFormatter(millions_formatter))
+    axA.set_xlabel("Amount $")
+    axA.set_ylabel("Ticker")
+    axA.set_title(f"Top {n} Most Bought Companies in {year}")
+
+    # RIGHT — DISPOSED
+    axD = disposed.head(n).sort_values().plot.barh(
+        ax=axes[1], color="#ef5350"
+    )
+    axD.xaxis.set_major_formatter(mtick.FuncFormatter(millions_formatter))
+    axD.set_xlabel("Amount $")
+    axD.set_ylabel("Ticker")
+    axD.set_title(f"Top {n} Most Sold Companies in {year}")
+
+    fig.tight_layout()
+
+    if save and outpath:
+        plt.savefig(f"{outpath}/top_{n}_companies_{year}_{start}_{end}.png", dpi=150)
+    if show:
+        plt.show()
+
+
+
+# =====================================================================
+# 4. Top N Companies Bought / Sold by Person
+# =====================================================================
+
+def plot_n_most_companies_bs_by_person(
+    acquired,
+    disposed,
+    *,
+    year,
+    n,
+    save=False,
+    outpath=None,
+    show=False,
+    start=None,
+    end=None
+):
+    """
+    acquired index: (reporter, issuer_ticker)
+    disposed same
+    """
+
+    # Format long names for rendering
+    def _fmt(idx):
+        name, ticker = idx
+        return (name[:30] + "..") if len(name) > 30 else name, ticker
+
+    acquired.index = acquired.index.map(_fmt)
+    disposed.index = disposed.index.map(_fmt)
+
+    fig, axes = plt.subplots(1, 2, figsize=(20, 10))
+
+    # LEFT — BUYERS
+    axA = acquired.head(n).sort_values().plot.barh(
+        ax=axes[0], color="#2196f3"
+    )
+    axA.xaxis.set_major_formatter(mtick.FuncFormatter(millions_formatter))
+    axA.set_xlabel("Amount $")
+    axA.set_ylabel("Insider, Ticker")
+    axA.set_title(f"Top {n} Buyers in {year}")
+
+    # RIGHT — SELLERS
+    axD = disposed.head(n).sort_values().plot.barh(
+        ax=axes[1], color="#ef5350"
+    )
+    axD.xaxis.set_major_formatter(mtick.FuncFormatter(millions_formatter))
+    axD.set_xlabel("Amount $")
+    axD.set_ylabel("Insider, Ticker")
+    axD.set_title(f"Top {n} Sellers in {year}")
+
+    fig.tight_layout()
+
+    if save and outpath:
+        plt.savefig(f"{outpath}/top_{n}_by_person_{year}_{start}_{end}.png", dpi=150)
+    if show:
+        plt.show()
+
+
+
+# =====================================================================
+# 5. Price Line Chart
+# =====================================================================
+
+def plot_line_chart(
+    df,
+    *,
+    ticker,
+    save=False,
+    outpath=None,
+    show=False,
+    start=None,
+    end=None
+):
+    """
+    df is OHLC dataframe with a 'Close' column.
+    """
+
+    ax = df["Close"].plot(
+        figsize=(15, 7),
+        title=f"{ticker} Daily Price Chart",
+        xlabel="Date",
+        ylabel="Price $"
+    )
+
+    plt.tight_layout()
+
+    if save and outpath:
+        plt.savefig(f"{outpath}/{ticker}_line_chart_{start}_{end}.png", dpi=150)
+    if show:
+        plt.show()
+
+
+
+# =====================================================================
+# 6. Sector Statistics by Year
+# =====================================================================
+
+def plot_sector_stats(
+    df,
+    *,
+    save=False,
+    outpath=None,
+    show=False,
+    start=None,
+    end=None
+):
+    """
+    df index: (year, acquired_disposed, sector)
+    df values: total_value
+    """
+
+    fig, ax = plt.subplots(figsize=(17, 10))
+
+    unstacked = df.unstack()  # → columns become sector/acquired_disposed
+    unstacked.plot.bar(stacked=True, ax=ax)
+
+    ax.yaxis.set_major_formatter(mtick.FuncFormatter(millions_formatter))
+    ax.set_xlabel("Year")
+    ax.set_ylabel("Amount $")
+    ax.set_title("Sector Statistics")
+
+    ax.set_xticks(range(len(unstacked.index)))
+    ax.set_xticklabels([idx.strftime("%Y") for idx in unstacked.index])
+    ax.grid(True)
+
+    plt.tight_layout()
+
+    if save and outpath:
+        plt.savefig(f"{outpath}/sector_stats_{start}_{end}.png", dpi=150)
+    if show:
+        plt.show()
+

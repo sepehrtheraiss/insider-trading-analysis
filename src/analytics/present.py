@@ -1,28 +1,21 @@
 import pandas as pd
 
-def summarize_codes(df: pd.DataFrame) -> pd.DataFrame:
-    """Total dollar value by transaction code and acquired/disposed flag."""
-    if df.empty:
-        return df
-    g = (df
-         .groupby(["code","acquired_disposed"], dropna=False)["total_value"]
-         .sum()
-         .reset_index()
-         .sort_values("total_value", ascending=False)
+def name_formatter(tup):
+    name, ticker = tup
+    if len(name) > 30:
+        name = name[:30] + ".."
+    return name, ticker
+
+def sector_year_pivot(df: pd.DataFrame):
+    dfc = df.copy()
+    dfc["year"] = dfc["transaction_date"].dt.year
+    return dfc.pivot_table(
+        index="sector",
+        columns="year",
+        values="total_value",
+        aggfunc="sum",
     )
-    return g
 
-def sector_year_pivot(df: pd.DataFrame) -> pd.DataFrame:
-    dfi = df.copy()
-    dfi["year"] = dfi["transaction_date"].dt.year
-    pv = (dfi.pivot_table(index="sector", columns="year", values="total_value", aggfunc="sum"))
-    return pv
-
-def top_reporters(df: pd.DataFrame, n=20) -> pd.DataFrame:
-    dfi = df.copy()
-    g = (dfi.groupby(["reporter","issuer_ticker"], dropna=False)["total_value"]
-             .sum()
-             .reset_index()
-             .sort_values("total_value", ascending=False)
-        )
-    return g.head(n)
+# Prettify y axis: 2000000 to $2M
+def millions_formatter(x,y=0):
+    return '$ {:,.0f} M'.format(x*1e-6)

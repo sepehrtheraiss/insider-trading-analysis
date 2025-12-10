@@ -11,3 +11,6 @@ requires-python = ">=3.9"
 [tool.setuptools.packages.find]
 where = ["src"]
 
+[project.scripts]
+insider_cli = "cli.run_cli:cli"
+
