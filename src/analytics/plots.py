@@ -103,7 +103,6 @@ def plot_n_most_companies_bs(
     acquired,
     disposed,
     *,
-    year,
     n,
     save=False,
     outpath=None,
@@ -123,37 +122,36 @@ def plot_n_most_companies_bs(
         ax=axes[0], color="#2196f3"
     )
     axA.xaxis.set_major_formatter(mtick.FuncFormatter(millions_formatter))
-    axA.set_xlabel("Amount $")
+    axA.set_xlabel("Amount $Millions")
     axA.set_ylabel("Ticker")
-    axA.set_title(f"Top {n} Most Bought Companies in {year}")
+    axA.set_title(f"Top {n} Most Bought Companies in {start}-{end}")
 
     # RIGHT — DISPOSED
     axD = disposed.head(n).sort_values().plot.barh(
         ax=axes[1], color="#ef5350"
     )
     axD.xaxis.set_major_formatter(mtick.FuncFormatter(millions_formatter))
-    axD.set_xlabel("Amount $")
+    axD.set_xlabel("Amount $Millions")
     axD.set_ylabel("Ticker")
-    axD.set_title(f"Top {n} Most Sold Companies in {year}")
+    axD.set_title(f"Top {n} Most Sold Companies in {start}-{end}")
 
     fig.tight_layout()
 
     if save and outpath:
-        plt.savefig(f"{outpath}/top_{n}_companies_{year}_{start}_{end}.png", dpi=150)
+        plt.savefig(f"{outpath}/top_{n}_companies_{start}_{end}.png", dpi=150)
     if show:
         plt.show()
 
 
 
 # =====================================================================
-# 4. Top N Companies Bought / Sold by Person
+# 4. Top N Companies Bought / Sold by reporter
 # =====================================================================
 
-def plot_n_most_companies_bs_by_person(
+def plot_n_most_companies_bs_by_reporter(
     acquired,
     disposed,
     *,
-    year,
     n,
     save=False,
     outpath=None,
@@ -163,7 +161,7 @@ def plot_n_most_companies_bs_by_person(
 ):
     """
     acquired index: (reporter, issuer_ticker)
-    disposed same
+    disposed index: (reporter, issuer_ticker) 
     """
 
     # Format long names for rendering
@@ -181,23 +179,23 @@ def plot_n_most_companies_bs_by_person(
         ax=axes[0], color="#2196f3"
     )
     axA.xaxis.set_major_formatter(mtick.FuncFormatter(millions_formatter))
-    axA.set_xlabel("Amount $")
+    axA.set_xlabel("Amount $Millions")
     axA.set_ylabel("Insider, Ticker")
-    axA.set_title(f"Top {n} Buyers in {year}")
+    axA.set_title(f"Top {n} Buyers in {start}-{end}")
 
     # RIGHT — SELLERS
     axD = disposed.head(n).sort_values().plot.barh(
         ax=axes[1], color="#ef5350"
     )
     axD.xaxis.set_major_formatter(mtick.FuncFormatter(millions_formatter))
-    axD.set_xlabel("Amount $")
+    axD.set_xlabel("Amount $Millions")
     axD.set_ylabel("Insider, Ticker")
-    axD.set_title(f"Top {n} Sellers in {year}")
+    axD.set_title(f"Top {n} Sellers in {start}-{end}")
 
     fig.tight_layout()
 
     if save and outpath:
-        plt.savefig(f"{outpath}/top_{n}_by_person_{year}_{start}_{end}.png", dpi=150)
+        plt.savefig(f"{outpath}/top_{n}_by_reporter_{start}_{end}.png", dpi=150)
     if show:
         plt.show()
 
@@ -250,14 +248,9 @@ def plot_sector_stats(
     start=None,
     end=None
 ):
-    """
-    df index: (year, acquired_disposed, sector)
-    df values: total_value
-    """
-
     fig, ax = plt.subplots(figsize=(17, 10))
 
-    unstacked = df.unstack()  # → columns become sector/acquired_disposed
+    unstacked = df.unstack()
     unstacked.plot.bar(stacked=True, ax=ax)
 
     ax.yaxis.set_major_formatter(mtick.FuncFormatter(millions_formatter))
@@ -265,14 +258,15 @@ def plot_sector_stats(
     ax.set_ylabel("Amount $")
     ax.set_title("Sector Statistics")
 
-    ax.set_xticks(range(len(unstacked.index)))
-    ax.set_xticklabels([idx.strftime("%Y") for idx in unstacked.index])
-    ax.grid(True)
+    years = [idx[0].year for idx in unstacked.index]
+    ax.set_xticks(range(len(years)))
+    ax.set_xticklabels([str(y) for y in years])
 
+
+    ax.grid(True)
     plt.tight_layout()
 
     if save and outpath:
         plt.savefig(f"{outpath}/sector_stats_{start}_{end}.png", dpi=150)
     if show:
         plt.show()
-

@@ -9,7 +9,7 @@ from cli.cli_handlers import (
     handle_plot_amount_assets,
     handle_plot_distribution_codes,
     handle_plot_n_companies,
-    handle_plot_n_companies_person,
+    handle_plot_n_companies_reporter,
     handle_plot_line_chart,
     handle_plot_sector_stats,
 )
@@ -68,16 +68,14 @@ COMMANDS = {
         "handler": handle_plot_n_companies,
         "help": "Plot top N companies bought/sold",
         "options": COMMON_PLOT_OPTIONS + [
-            ("--year", {"required": True, "type": int, "help": "Year to analyze"}),
             ("--n", {"default": 15, "type": int, "help": "Number of companies"}),
         ],
     },
 
-    "plot.n_most_companies_bs_by_person": {
-        "handler": handle_plot_n_companies_person,
-        "help": "Plot top N companies bought/sold by person",
+    "plot.n_most_companies_bs_by_reporter": {
+        "handler": handle_plot_n_companies_reporter,
+        "help": "Plot top N companies bought/sold by reporter",
         "options": COMMON_PLOT_OPTIONS + [
-            ("--year", {"required": True, "type": int}),
             ("--n", {"default": 15, "type": int}),
         ],
     },

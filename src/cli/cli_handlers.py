@@ -1,15 +1,14 @@
 # business logic
-from analytics.plot_service import PlotDatasetBuilder
 from analytics.plots import (
     plot_amount_assets_acquired_disposed,
     plot_distribution_trans_codes,
     plot_n_most_companies_bs,
-    plot_n_most_companies_bs_by_person,
+    plot_n_most_companies_bs_by_reporter,
     plot_line_chart,
     plot_sector_stats,
 )
 from analytics.analysis import (companies_bs_in_period,
-                                companies_bs_in_period_by_person,
+                                companies_bs_in_period_by_reporter,
                                 distribution_by_codes, sector_stats_by_year,
                                 total_sec_acq_dis_day)
 from config.insider_trading_config import InsiderTradingConfig
@@ -79,8 +78,6 @@ def _require_outpath_if_saved(save: bool, outpath: str | None):
 # Plotting handlers
 # --------------------------
 
-builder = PlotDatasetBuilder()
-
 def handle_plot_amount_assets(ticker, start, end, save, outpath, show):
     db = InsiderRepository()
     df = db.get_transactions(start, end)
@@ -113,16 +110,15 @@ def handle_plot_distribution_codes(ticker, start, end, save, outpath, show):
         show=show,
     )
 
-def handle_plot_n_companies(ticker, start, end, year, n, save, outpath, show):
+def handle_plot_n_companies(ticker, start, end, n, save, outpath, show):
     db = InsiderRepository()
     df = db.get_transactions(start, end)
 
-    acquired, disposed = companies_bs_in_period(df, year)
+    acquired, disposed = companies_bs_in_period(df, start, end)
 
     plot_n_most_companies_bs(
         acquired=acquired,
         disposed=disposed,
-        year=year,
         n=n,
         save=save,
         outpath=outpath,
@@ -131,16 +127,15 @@ def handle_plot_n_companies(ticker, start, end, year, n, save, outpath, show):
         end=end,
     )
 
-def handle_plot_n_companies_person(ticker, start, end, year, n, save, outpath, show):
+def handle_plot_n_companies_reporter(ticker, start, end, n, save, outpath, show):
     db = InsiderRepository()
     df = db.get_transactions(start, end)
 
-    acquired, disposed = companies_bs_in_period_by_person(df, year)
+    acquired, disposed = companies_bs_in_period_by_reporter(df, start, end)
 
-    plot_n_most_companies_bs_by_person(
+    plot_n_most_companies_bs_by_reporter(
         acquired=acquired,
         disposed=disposed,
-        year=year,
         n=n,
         save=save,
         outpath=outpath,
