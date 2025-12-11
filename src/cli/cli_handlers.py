@@ -1,4 +1,5 @@
 # business logic
+from config.settings import settings
 from analytics.plots import (
     plot_amount_assets_acquired_disposed,
     plot_distribution_trans_codes,
@@ -34,8 +35,8 @@ def handle_fetch_insider_tx(ticker: str, start: str, end: str):
         query = f"issuer.tradingSymbol:{ticker}"
     else:
         query = "*:*"
-    config = InsiderTradingConfig()
-    src = InsiderApiSource(config.base_url, config.api_key)
+    #config = InsiderTradingConfig()
+    src = InsiderApiSource(settings.BASE_URL, settings.SEC_API_KEY)
     log.info(f"[TRANSACTIONS] Running for window: {start} → {end} (query={query})")
     raw = list(src.fetch_insider_transactions(query, start, end))
 
