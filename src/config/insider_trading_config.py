@@ -14,15 +14,32 @@ class ConfigError(RuntimeError):
     pass
 
 class InsiderTradingConfig:
-    def __init__(self): 
-        self.test_mode_tx = TEST_MODE_TX
-        self.test_mode_map = TEST_MODE_MAP
+
+    @property
+    def test_mode_map(self):
+        if not TEST_MODE_MAP:
+            raise ConfigError("Missing TEST_MODE_MAP environment variable. Set it before running.")
+        return TEST_MODE_MAP
+
+    @property
+    def test_mode_tx(self):
+        if not TEST_MODE_TX:
+            raise ConfigError("Missing TEST_MODE_TX environment variable. Set it before running.")
+        return TEST_MODE_TX
+
+    @test_mode_tx.setter
+    def test_mode_tx(self, value: bool):
+        self.TEST_MODE_TX = value
 
     @property
     def test_path_tx(self):
         if not TEST_PATH_TX:
             raise ConfigError("Missing TEST_PATH_TX environment variable. Set it before running.")
         return TEST_PATH_TX
+
+    @test_path_tx.setter
+    def test_path_tx(self, value: str):
+        self.TEST_PATH_TX= value
 
     @property
     def test_path_map(self):

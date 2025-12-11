@@ -95,7 +95,7 @@ class InsiderTradingPipeline:
         # ------------------------------------------------------------
         # Exchange Mapping ETL components
         # ------------------------------------------------------------
-        self.mapping_source = InsiderApiSource(base_url=config.base_url, api_key=config.api_key)
+        self.mapping_source = InsiderApiSource(base_url=config.base_url, api_key=config.sec_api_key)
         self.mapping_transformer = MappingTransformer()
         self.mapping_loader = ExchangeMappingLoader(db)
 
@@ -111,7 +111,7 @@ class InsiderTradingPipeline:
         # ------------------------------------------------------------
         # Insider Transactions ETL components
         # ------------------------------------------------------------
-        self.transactions_source = InsiderApiSource(api_key=config.api_key)
+        self.transactions_source = InsiderApiSource(api_key=config.sec_api_key)
         self.transactions_transformer = InsiderTransactionsTransformer()
         self.transactions_loader = InsiderTransactionsLoader(db)
 
@@ -178,7 +178,7 @@ class InsiderTradingPipeline:
 
         # 2) Insider transactions
         if self.config.test_mode_tx:
-            self.transactions_task.run(params=None, raw_path_override=self.config.test_path_map)
+            self.transactions_task.run(params=None, raw_path_override=self.config.test_path_tx)
         else:
             if self.transactions_are_stale():
                 start, end = self._compute_transactions_window()

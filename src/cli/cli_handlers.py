@@ -1,28 +1,25 @@
 # business logic
-from config.settings import settings
-from analytics.plots import (
-    plot_amount_assets_acquired_disposed,
-    plot_distribution_trans_codes,
-    plot_n_most_companies_bs,
-    plot_n_most_companies_bs_by_reporter,
-    plot_line_chart,
-    plot_sector_stats,
-)
+import pandas as pd
+import yfinance as yf
+from dateutil.parser import parse
+
 from analytics.analysis import (companies_bs_in_period,
                                 companies_bs_in_period_by_reporter,
                                 distribution_by_codes, sector_stats_by_year,
                                 total_sec_acq_dis_day)
+from analytics.plots import (plot_amount_assets_acquired_disposed,
+                             plot_distribution_trans_codes, plot_line_chart,
+                             plot_n_most_companies_bs,
+                             plot_n_most_companies_bs_by_reporter,
+                             plot_sector_stats)
 from config.insider_trading_config import InsiderTradingConfig
+from config.settings import settings
 from db.etl_db import ETLDatabase
 from db.repository import InsiderRepository
 from insider_trading.extract.sources.insider_api_source import InsiderApiSource
 from insider_trading.pipeline import InsiderTradingPipeline
 from utils.logger import Logger
 from writers.raw_writer import RawWriter
-import pandas as pd
-import yfinance as yf
-from datetime import datetime
-from dateutil.parser import parse
 
 log = Logger(__name__)
 # ─────────────────────────
@@ -36,20 +33,19 @@ def handle_fetch_insider_tx(ticker: str, start: str, end: str):
     else:
         query = "*:*"
     #config = InsiderTradingConfig()
-    src = InsiderApiSource(settings.BASE_URL, settings.SEC_API_KEY)
+    src = InsiderApiSource(settings.base_url, settings.sec_api_key)
     log.info(f"[TRANSACTIONS] Running for window: {start} → {end} (query={query})")
     raw = list(src.fetch_insider_transactions(query, start, end))
 
     log.info(f"[EXTRACT] Raw filing records = {len(raw)}")
 
     raw_writer = RawWriter(directory="data/raw")
-    raw_path = raw_writer.save(f"insider_transactions_{ticker}_{start}_{end}", raw)
+    raw_path = raw_writer.save(f"insider_transactions_{start}_{end}", raw)
     log.info(f"[RAW] Saved → {raw_path}")
 
 def handle_fetch_exchange_mapping():
     """force fetch exchange mapping"""
-    config = InsiderTradingConfig()
-    src = InsiderApiSource(config.base_url, config.api_key)
+    src = InsiderApiSource(settings.base_url, settings.sec_api_key)
     log.info("[TRANSACTIONS] Running for exchange mapping")
     raw = list(src.fetch_exchange_mapping())
 
@@ -61,7 +57,7 @@ def handle_fetch_exchange_mapping():
 
 def handle_build_dataset(raw_path: str):
     """force run pipeline on raw_path"""
-    config = InsiderTradingConfig()
+    config = settings 
     config.test_mode_tx = True
     config.test_path_tx = raw_path
     InsiderTradingPipeline(config, ETLDatabase()).run()
