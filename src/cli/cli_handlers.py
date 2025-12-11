@@ -19,6 +19,9 @@ from insider_trading.pipeline import InsiderTradingPipeline
 from utils.logger import Logger
 from writers.raw_writer import RawWriter
 import pandas as pd
+import yfinance as yf
+from datetime import datetime
+from dateutil.parser import parse
 
 log = Logger(__name__)
 # ─────────────────────────
@@ -140,10 +143,31 @@ def handle_plot_n_companies_reporter(ticker, start, end, n, save, outpath, show)
 
 def handle_plot_line_chart(ticker, start, end, save, outpath, show):
     db = InsiderRepository()
-    df = db.get_ohlc(ticker, start, end)
+    df = db.get_transactions(start, end)
+    #start_date = datetime.strptime(start, "%Y-%m-%d").date()
+    start_date = parse(start).date()
+    #end_date = datetime.strptime(end, "%Y-%m-%d").date()
+    end_date = parse(end).date()
+    ticker_filter = (df["issuer_ticker"]==ticker) & \
+    (df["period_of_report"].dt.date >=start_date) & \
+    (df["period_of_report"].dt.date <=end_date)
+    ticker_acquired = df[ticker_filter].groupby("period_of_report").agg({
+        "total_value": "sum",
+        "acquired_disposed": "first"
+    })
+    
+    # remove time format 2022-03-14 00:00:00+00:00 -> 2022-03-14
+    ticker_acquired.index = ticker_acquired.index.tz_convert(None)
+    ticker_acquired.index.names = ['Date']
 
+    ohcl = yf.download(ticker, start=start_date.strftime("%Y-%m-%d"), end=end_date.strftime("%Y-%m-%d"), interval='1d', multi_level_index=False)
+    ohcl.columns = ohcl.columns.str.lower()
+    ticker_all = ohcl.join(ticker_acquired, how="outer")
+    # forward-fill OHLC values
+    # Missing values in these columns only happen on non-trading days (holidays/weekends).
+    ticker_all[["open", "high", "low", "close", "volume"]].ffill()
     plot_line_chart(
-        df,
+        ticker_all,
         ticker=ticker,
         save=save,
         outpath=outpath,

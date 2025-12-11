@@ -220,15 +220,56 @@ def plot_line_chart(
     df is OHLC dataframe with a 'Close' column.
     """
 
-    ax = df["Close"].plot(
-        figsize=(15, 7),
-        title=f"{ticker} Daily Price Chart",
-        xlabel="Date",
-        ylabel="Price $"
+    ax = df["close"].plot(figsize=(20, 7))
+    ax.xaxis_date()
+    ax.plot(df.index, df['close'], lw=2)
+
+    max_acquired = df['total_value'].max()
+    x = 0
+    # draw markers onto price time series. Marker size correlates to news volume.
+    for index, row in df.iterrows():
+        if row['total_value'] == 0:
+            continue
+
+        markersize = (row['total_value'] / max_acquired) * 25
+
+        if markersize < 7:
+            markersize = 7
+
+        color = 'green' if row['acquired_disposed'] == 'A' else 'red'
+        ax.plot([index], 
+                [row['close']], 
+                marker='o', 
+                color=color, 
+                markersize=markersize)
+
+        # overlay arrow pointer at largest news volume 
+        if row['total_value'] == max_acquired:
+            ax.annotate(
+            '\n' + "$ {:,.0f}".format(row['total_value']),
+            xy=(index, row['close']), xycoords='data',
+            xytext=(0, -30), textcoords='offset pixels',
+            arrowprops=dict(arrowstyle="->", connectionstyle="arc3", color='red')
+            )
+
+    ax.set_ylabel("Price $")
+    ax.set_xlabel('Date')
+    ax.set_title(f"{ticker} Daily Price Chart")
+
+    total_value = df['total_value'].sum()
+    text_y_pos = (df['close'].max() + df['close'].min()) / 2
+    # Safe annotation index (use 10th point if exists, else use last point)
+    annot_idx = min(10, len(df.index) - 1)
+
+    ax.annotate(
+        'total_value amount: ' + "$ {:,.0f}".format(total_value),
+        xy=(df.index[annot_idx], text_y_pos), xycoords='data',
+        xytext=(-100, -100), textcoords='offset pixels',
     )
 
-    plt.tight_layout()
+    plt.setp(plt.gca().get_xticklabels(), rotation = 0, ha='center')
 
+    plt.tight_layout()
     if save and outpath:
         plt.savefig(f"{outpath}/{ticker}_line_chart_{start}_{end}.png", dpi=150)
     if show:
