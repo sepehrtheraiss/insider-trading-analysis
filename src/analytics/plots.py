@@ -46,7 +46,7 @@ def plot_amount_assets_acquired_disposed(
     ax.grid(True)
     ax.yaxis.set_major_formatter(mtick.FuncFormatter(millions_formatter))
     ax.set_xlabel("Year")
-    ax.set_ylabel("Amount $")
+    ax.set_ylabel("Amount $Millions")
     ax.set_title("Acquired / Disposed per Year")
     ax.set_xticks(range(len(df.index)))
     ax.set_xticklabels([ts.strftime("%Y") for ts in df.index])
@@ -82,7 +82,7 @@ def plot_distribution_trans_codes(
     ax = series.plot.barh(figsize=(20, 10))
     ax.xaxis.set_major_formatter(mtick.FuncFormatter(millions_formatter))
 
-    ax.set_xlabel("Amount $")
+    ax.set_xlabel("Amount $Millions")
     ax.set_ylabel("Transaction Code")
     ax.set_title(f"Distribution of Transaction Codes ({start} → {end})")
 
@@ -124,7 +124,7 @@ def plot_n_most_companies_bs(
     axA.xaxis.set_major_formatter(mtick.FuncFormatter(millions_formatter))
     axA.set_xlabel("Amount $Millions")
     axA.set_ylabel("Ticker")
-    axA.set_title(f"Top {n} Most Bought Companies in {start}-{end}")
+    axA.set_title(f"Top {n} Most Bought Companies in {start} → {end}")
 
     # RIGHT — DISPOSED
     axD = disposed.head(n).sort_values().plot.barh(
@@ -133,7 +133,7 @@ def plot_n_most_companies_bs(
     axD.xaxis.set_major_formatter(mtick.FuncFormatter(millions_formatter))
     axD.set_xlabel("Amount $Millions")
     axD.set_ylabel("Ticker")
-    axD.set_title(f"Top {n} Most Sold Companies in {start}-{end}")
+    axD.set_title(f"Top {n} Most Sold Companies in {start} → {end}")
 
     fig.tight_layout()
 
@@ -181,7 +181,7 @@ def plot_n_most_companies_bs_by_reporter(
     axA.xaxis.set_major_formatter(mtick.FuncFormatter(millions_formatter))
     axA.set_xlabel("Amount $Millions")
     axA.set_ylabel("Insider, Ticker")
-    axA.set_title(f"Top {n} Buyers in {start}-{end}")
+    axA.set_title(f"Top {n} Buyers in {start} → {end}")
 
     # RIGHT — SELLERS
     axD = disposed.head(n).sort_values().plot.barh(
@@ -190,7 +190,7 @@ def plot_n_most_companies_bs_by_reporter(
     axD.xaxis.set_major_formatter(mtick.FuncFormatter(millions_formatter))
     axD.set_xlabel("Amount $Millions")
     axD.set_ylabel("Insider, Ticker")
-    axD.set_title(f"Top {n} Sellers in {start}-{end}")
+    axD.set_title(f"Top {n} Sellers in {start} → {end}")
 
     fig.tight_layout()
 
@@ -255,7 +255,7 @@ def plot_sector_stats(
 
     ax.yaxis.set_major_formatter(mtick.FuncFormatter(millions_formatter))
     ax.set_xlabel("Year")
-    ax.set_ylabel("Amount $")
+    ax.set_ylabel("Amount $Millions")
     ax.set_title("Sector Statistics")
 
     years = [idx[0].year for idx in unstacked.index]
