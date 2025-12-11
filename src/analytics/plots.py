@@ -36,7 +36,6 @@ def plot_amount_assets_acquired_disposed(
     df columns: ['acquired', 'disposed']
     index: DatetimeIndex grouped by year
     """
-
     ax = df.plot.bar(
         figsize=(15, 7),
         stacked=False,
@@ -48,8 +47,10 @@ def plot_amount_assets_acquired_disposed(
     ax.set_xlabel("Year")
     ax.set_ylabel("Amount $Millions")
     ax.set_title("Acquired / Disposed per Year")
-    ax.set_xticks(range(len(df.index)))
-    ax.set_xticklabels([ts.strftime("%Y") for ts in df.index])
+    #ax.set_xticks(range(len(df.index)))
+    ax.set_xticks(range(df.index.size))
+    #ax.set_xticklabels([ts.strftime("%Y") for ts in df.index])
+    ax.set_xticklabels([ts.strftime('%Y') for idx, ts in enumerate(df.index)])
     ax.figure.autofmt_xdate(rotation=0, ha='center')
 
     plt.tight_layout()

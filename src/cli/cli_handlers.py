@@ -18,6 +18,7 @@ from insider_trading.extract.sources.insider_api_source import InsiderApiSource
 from insider_trading.pipeline import InsiderTradingPipeline
 from utils.logger import Logger
 from writers.raw_writer import RawWriter
+import pandas as pd
 
 log = Logger(__name__)
 # ─────────────────────────
@@ -67,27 +68,20 @@ def handle_build_dataset(raw_path: str):
 # PLOT HANDLERS
 # ─────────────────────────
 
-def _require_outpath_if_saved(save: bool, outpath: str | None):
-    if save and not outpath:
-        from click import UsageError
-        raise UsageError("--save requires --outpath")
-    return outpath
-
-
-# --------------------------
-# Plotting handlers
-# --------------------------
-
 def handle_plot_amount_assets(ticker, start, end, save, outpath, show):
     db = InsiderRepository()
     df = db.get_transactions(start, end)
 
     # BUSINESS LOGIC (analysis layer)
     dataset = total_sec_acq_dis_day(df)
+    dataset.index = dataset.index.normalize()
+    acquired_yr = dataset.groupby(pd.Grouper(freq='Y'))['acquired'].sum()
+    disposed_yr = dataset.groupby(pd.Grouper(freq='Y'))['disposed'].sum()
+    acquired_disposed_yr = pd.merge(acquired_yr, disposed_yr, on='period_of_report', how='outer')
 
     # RENDERING (plotting layer)
     plot_amount_assets_acquired_disposed(
-        dataset,
+        acquired_disposed_yr,
         save=save,
         outpath=outpath,
         show=show,
