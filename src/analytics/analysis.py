@@ -73,23 +73,17 @@ def distribution_by_codes(df: pd.DataFrame):
         .sort_values(ascending=False)
     )
 
-# def sector_stats_by_year(df: pd.DataFrame):
-#     df2 = df.copy()
-#     return df2.groupby([pd.Grouper(freq="Y"), "acquired_disposed", "sector"])["total_value"].sum()
 def sector_stats_by_year(df: pd.DataFrame):
-    df2 = df.copy()
-    #df2 = df2[df2["sector"].fillna("").str.strip() != ""]
-    # Ensure the index is a datetime index
-    if df2.index.dtype != "datetime64[ns]":
-        # Try the most likely date column
-        if "transaction_date" in df2.columns:
-            df2["transaction_date"] = pd.to_datetime(df2["transaction_date"], errors="coerce")
-            df2 = df2.set_index("transaction_date")
-        elif "period_of_report" in df2.columns:
-            df2["period_of_report"] = pd.to_datetime(df2["period_of_report"], errors="coerce")
-            df2 = df2.set_index("period_of_report")
-        else:
-            raise ValueError("No date column found for grouping by year")
+    sector_trades = df[['sector', 'total_value', 'period_of_report', 'acquired_disposed']].copy()
+    sector_trades = sector_trades[sector_trades["sector"] != ""]
+    sector_trades['period_of_report'] = pd.to_datetime(sector_trades['period_of_report'])
+    sector_trades = sector_trades.set_index('period_of_report')
+    sector_trades.groupby([pd.Grouper(freq='Y'), "acquired_disposed", "sector"]).head(5)
 
-    # Group by Year-End instead of deprecated 'Y'
-    return df2.groupby([pd.Grouper(freq="YE"), "acquired_disposed", "sector"])["total_value"].sum()
+    sector_trades[sector_trades["acquired_disposed"]=="D"] \
+                .groupby([pd.Grouper(freq='Y'), "acquired_disposed", "sector"])['total_value'] \
+                .sum() \
+                .unstack()
+    
+    sector_trades = sector_trades[sector_trades["acquired_disposed"]=="A"]
+    return sector_trades.groupby([pd.Grouper(freq='Y'), "acquired_disposed", "sector"])['total_value'].sum()

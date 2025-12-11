@@ -249,22 +249,22 @@ def plot_sector_stats(
     start=None,
     end=None
 ):
-    fig, ax = plt.subplots(figsize=(17, 10))
+    fig, ax = plt.subplots()
 
     unstacked = df.unstack()
-    unstacked.plot.bar(stacked=True, ax=ax)
+    unstacked.plot.bar(stacked=True, ax=ax, figsize=(17, 10), colormap='tab20')
 
-    ax.yaxis.set_major_formatter(mtick.FuncFormatter(millions_formatter))
-    ax.set_xlabel("Year")
-    ax.set_ylabel("Amount $Millions")
-    ax.set_title("Sector Statistics")
-
-    years = [idx[0].year for idx in unstacked.index]
-    ax.set_xticks(range(len(years)))
-    ax.set_xticklabels([str(y) for y in years])
-
+    ax.legend(loc=2)
 
     ax.grid(True)
+    ax.yaxis.set_major_formatter(mtick.FuncFormatter(millions_formatter))
+    ax.set_xticks(range(unstacked.index.size))
+    ax.set_xticklabels([idx[0].strftime('%Y') for idx in unstacked.index])
+    ax.figure.autofmt_xdate(rotation=0, ha='center')
+    ax.set_xlabel("Year")
+    ax.set_ylabel("Amount $")
+    ax.set_title("Sector Statistics")
+
     plt.tight_layout()
 
     if save and outpath:

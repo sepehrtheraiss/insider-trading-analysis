@@ -153,7 +153,6 @@ def handle_plot_line_chart(ticker, start, end, save, outpath, show):
 def handle_plot_sector_stats(ticker, start, end, save, outpath, show):
     db = InsiderRepository()
     df = db.get_rollup(start, end)
-
     dataset = sector_stats_by_year(df)
 
     plot_sector_stats(
