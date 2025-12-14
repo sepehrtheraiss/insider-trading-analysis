@@ -1,0 +1,81 @@
+from typing import Dict, Any, Iterable
+import time
+import pandas as pd
+
+from ..adapters.sec_api_adapter import SecApiAdapter
+from ..adapters.http_adapter import HttpAdapter
+
+DEFAULT_PAGE_SIZE = 50
+class InsiderApiSource:
+    def __init__(self, base_url:str='', api_key:str='', sec_api_adapter=None, http_adapter=None):
+        self._sec_api_adapter= sec_api_adapter or SecApiAdapter(api_key)
+        self._http_adapter= http_adapter or HttpAdapter(base_url, api_key)
+
+    def fetch_insider_transactions(
+        self,
+        query_string: str,
+        start_date: str,
+        end_date: str,
+        size: int = DEFAULT_PAGE_SIZE,
+        sleep_seconds: float = 0.2,
+        sort_desc: bool = True,
+    ) -> Iterable[Dict[str, Any]]:
+            """
+            Streams insider transactions (Forms 3/4/5) that match query_string and filedAt in [start_date, end_date].
+            Dates are YYYY-MM-DD. Uses SEC-API InsiderTradingApi with pagination.
+            e.g.
+                query_string = "issuer.tradingSymbol:TSLA"
+                insider_trades_sample = insiderTradingApi.get_data({
+                "query": {"query_string": {"query": query_string}},
+                "from": "0",
+                "size": "2",
+                "sort": [{ "filedAt": { "order": "desc" } }]
+                })
+            """
+            frm = 0
+            sort = [{ "filedAt": { "order": "desc" if sort_desc else "asc" } }]
+            data = 1
+            while data:
+                payload = {
+                    "query": {"query_string": {"query": f"({query_string}) AND filedAt:[{start_date} TO {end_date}]"}},
+                    "from": str(frm),
+                    "size": str(size),
+                    "sort": sort,
+                }
+                # returns dict_keys(['total', 'transactions']) 
+                # total -> <class 'dict'>
+                # transactions -> <class 'list'> -> <class 'dict'>
+                # dict_keys(['id', 'accessionNo', 'filedAt', 'schemaVersion',
+                #            'documentType', 'periodOfReport', 'notSubjectToSection16',
+                #            'issuer', 'reportingOwner', 'nonDerivativeTable',
+                #            'derivativeTable', 'footnotes', 'ownerSignatureName',
+                #            'ownerSignatureNameDate'])
+                data = self._sec_api_adapter.fetch('InsiderTradingApi', 'get_data',payload)
+                txs = data.get("transactions", [])
+                if not txs:
+                    break
+                for t in txs:
+                    yield t
+                frm += size
+                # needs work
+                time.sleep(sleep_seconds)
+            yield {}
+
+     
+    def fetch_exchange_mapping(self, exchanges=( "nasdaq", "nyse" )) -> pd.DataFrame:
+        """
+        Fetch company metadata (ticker, sector, industry, exchange) from SEC-API Mapping endpoints.
+        Returns a DataFrame with columns: issuerTicker, cik, exchange, sector, industry, category, name
+        """
+        MAPPING_ENDPOINT = "mapping/exchange/{exchange}?token={key}"
+        records = []
+        for ex in exchanges:
+            endpoint = MAPPING_ENDPOINT.format(exchange=ex,key=self._http_adapter.api_key)
+            # dict_keys(['name', 'ticker', 'cik', 'cusip', 'exchange', 'isDelisted', 'category',
+            #            'sector', 'industry', 'sic', 'sicSector', 'sicIndustry', 'famaSector',
+            #            'famaIndustry', 'currency', 'location', 'id'])
+            data = self._http_adapter.fetch(endpoint)
+            if not data:
+                continue
+            records.extend(data)
+        return records 

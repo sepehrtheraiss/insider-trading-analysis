@@ -1,0 +1,73 @@
+                ┌───────────────────────────┐
+                │       CLI / Scheduler      │
+                │  (manual)      (cron)      │
+                └───────────────┬───────────┘
+                                │
+                                ▼
+                       ┌────────────────┐
+                       │ Orchestrator   │
+                       │  Pipeline      │
+                       └───────┬────────┘
+                               │
+        ┌──────────────────────┼────────────────────────┐
+        ▼                      ▼                        ▼
+┌────────────────┐   ┌──────────────────────┐   ┌──────────────────┐
+│ Mapping Stale? │   │ Transactions Stale?  │   │  OHLC Pipeline   │
+└───────┬────────┘   └──────────┬──────────┘   └──────────┬────────┘
+        │ Yes                   │ Yes                     │ Yes
+        ▼                       ▼                        ▼
+┌────────────────┐      ┌──────────────────┐     ┌─────────────────┐
+│ Mapping Task   │      │ Transactions Task│     │ OHLC Task       │
+└───────┬────────┘      └──────────┬───────┘     └──────────┬──────┘
+        │ Extract                  │ Extract                 │ Extract
+        ▼                          ▼                         ▼
+┌──────────────────────────┐ ┌──────────────────────────┐ ┌─────────────────┐
+│ Mapping Source (API)     │ │ Transactions Source (API)│ │ OHLC API/CSV    │
+│ returns GENERATOR        │ │ returns GENERATOR        │ │ returns Data    │
+└───────────┬──────────────┘ └────────────┬─────────────┘ └──────────┬─────┘
+            │ Buffer to LIST              │ Buffer to LIST           │ Already list
+            ▼                              ▼                          ▼
+      ┌─────────────┐               ┌──────────────┐           ┌──────────────┐
+      │ Raw Writer  │               │ Raw Writer   │           │ Raw Writer   │
+      │ (Bronze)    │               │ (Bronze)     │           │ (Bronze)     │
+      └──────┬──────┘               └───────┬──────┘           └──────┬──────┘
+             │                              │                         │
+             ▼                              ▼                         ▼
+      ┌──────────────┐              ┌──────────────┐           ┌──────────────┐
+      │ Transformer  │              │ Transformer  │           │ Transformer  │
+      │ normalize    │              │ normalize    │           │ clean        │
+      │ clean        │              │ clean        │           │ validate     │
+      │ dedupe       │              │ dedupe       │           └──────────────┘
+      └──────┬───────┘              └───────┬──────┘                   
+             │                              │
+             ▼                              ▼
+      ┌──────────────┐              ┌──────────────┐
+      │ Staging       │             │ Staging       │
+      │ Writer (Silver│             │ Writer        │
+      │ multiple .parq│             │ multiple .parq│
+      └──────┬────────┘             └──────┬────────┘
+             │                              │
+             ▼                              ▼
+      ┌──────────────┐              ┌──────────────┐
+      │ Final Writer │              │ Final Writer │
+      │ enforce      │              │ enforce      │
+      │ schema       │              │ schema       │
+      │ enforce type │              │ enforce type │
+      │ write .parq  │              │ write .parq  │
+      └──────┬────────┘             └──────┬────────┘
+             │                              │
+             ▼                              ▼
+      ┌──────────────┐              ┌──────────────┐
+      │ DB Loader    │              │ DB Loader    │
+      │ upsert /     │              │ insert_many  │
+      │ insert_many  │              └──────────────┘
+      └──────┬────────┘                      
+             │
+             ▼
+      ┌──────────────┐
+      │ PostgreSQL   │
+      │ tables       │
+      │ + ETL state  │
+      │ + VIEW       │
+      └──────────────┘
+
