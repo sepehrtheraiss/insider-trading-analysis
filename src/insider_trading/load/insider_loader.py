@@ -56,11 +56,12 @@ class InsiderTransactionsLoader:
         with Session(engine, future=True) as session:
             for _, row in df.iterrows():
 
-                if self._exists(session, row):
-                    skipped += 1
-                    continue
+                #if self._exists(session, row):
+                #    skipped += 1
+                #    continue
 
                 obj = InsiderTransaction(
+                    accession_no=row["accession_no"],
                     filed_at=row["filed_at"],
                     period_of_report=row["period_of_report"],
                     document_type=row["document_type"],

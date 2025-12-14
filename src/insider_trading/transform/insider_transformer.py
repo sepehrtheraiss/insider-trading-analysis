@@ -9,6 +9,7 @@ class InsiderTransactionsTransformer:
 
     # DB schema — MUST match SQLAlchemy InsiderTransaction fields
     SCHEMA = [
+        "accession_no",
         "filed_at",
         "period_of_report",
         "document_type",

@@ -30,26 +30,36 @@ class OHLC(Base):
     close = Column(Numeric)
     volume = Column(BigInteger)
 
-
+    """
+    accession_no,
+    period_of_report,
+    transaction_date,
+    transaction_code,
+    security_title,
+    shares,
+    price_per_share    
+    """
 # -----------------------------
 # Insider Transactions
 # -----------------------------
 class InsiderTransaction(Base):
     __tablename__ = "insider_transactions"
-
     # __table_args__ = (
-    #     # Prevent exact duplicate transactions (business key)
     #     UniqueConstraint(
-    #         "issuer_ticker",
-    #         "period_of_report",
+    #         "accession_no",
+    #         "reporter_cik",
+    #         "transaction_date", # sometimes this field is empty and copies latest period_of_report
+    #         "code",
     #         "shares",
     #         "price_per_share",
-    #         name="uq_insider_transactions_business_key",
+    #         "shares_owned_following",
+    #         name="uq_insider_transactions_txn",
     #     ),
     # )
 
     id = Column(Integer, primary_key=True, autoincrement=True)
 
+    accession_no= Column(String)
     filed_at = Column(DateTime(timezone=True), index=True)
     period_of_report = Column(DateTime(timezone=True), index=True)
     document_type = Column(String)

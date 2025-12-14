@@ -21,6 +21,7 @@ def normalize_transactions(transactions: Sequence[dict]) -> pd.DataFrame:
     records: list[dict] = []
 
     for t in transactions:
+        accession_no = (t.get("accessionNo") or {})
         issuer = (t.get("issuer") or {})
         ro = (t.get("reportingOwner") or {})
         rel = (ro.get("relationship") or {})
@@ -61,6 +62,7 @@ def normalize_transactions(transactions: Sequence[dict]) -> pd.DataFrame:
                     total_value = None
 
                 records.append({
+                    "accession_no" : accession_no,
                     "filed_at": filed_at,
                     "period_of_report": period,
                     "document_type": doc_type,

@@ -1,6 +1,7 @@
 # business logic
 import pandas as pd
 import yfinance as yf
+from pathlib import Path
 from dateutil.parser import parse
 
 from analytics.analysis import (companies_bs_in_period,
@@ -19,6 +20,7 @@ from db.repository import InsiderRepository
 from insider_trading.extract.sources.insider_api_source import InsiderApiSource
 from insider_trading.pipeline import InsiderTradingPipeline
 from utils.logger import Logger
+from utils.utils import iterate_months
 from writers.raw_writer import RawWriter
 
 log = Logger(__name__)
@@ -59,8 +61,17 @@ def handle_build_dataset(raw_path: str):
     """force run pipeline on raw_path"""
     config = settings 
     config.test_mode_tx = True
-    config.test_path_tx = raw_path
-    InsiderTradingPipeline(config, ETLDatabase()).run()
+    db = ETLDatabase()
+    _path = Path("data/raw/"+raw_path)
+    if _path.exists() and _path.is_dir():
+        files = _path.glob("insider_transactions_*.json")
+        f_names = sorted([f.name for f in files])
+        for name in f_names:
+            config.test_path_tx = name
+            InsiderTradingPipeline(config, db).run()
+    else:
+        config.test_path_tx = raw_path
+        InsiderTradingPipeline(config, db).run()
     return
 
 

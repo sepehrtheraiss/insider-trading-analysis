@@ -50,6 +50,7 @@ class InsiderTradingPipeline:
         ]
 
         FINAL_SCHEMA_TRANSACTIONS = [
+            "accession_no",
             "filed_at",
             "period_of_report",
             "document_type",
