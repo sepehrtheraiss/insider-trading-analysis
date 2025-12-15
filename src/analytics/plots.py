@@ -176,22 +176,30 @@ def plot_n_most_companies_bs_by_reporter(
     fig, axes = plt.subplots(1, 2, figsize=(20, 10))
 
     # LEFT — BUYERS
-    axA = acquired.head(n).sort_values().plot.barh(
-        ax=axes[0], color="#2196f3"
-    )
-    axA.xaxis.set_major_formatter(mtick.FuncFormatter(millions_formatter))
-    axA.set_xlabel("Amount $Millions")
-    axA.set_ylabel("Insider, Ticker")
-    axA.set_title(f"Top {n} Buyers in {start} → {end}")
+    if not acquired.empty:
+        axA = acquired.head(n).sort_values().plot.barh(
+            ax=axes[0], color="#2196f3"
+        )
+        axA.xaxis.set_major_formatter(mtick.FuncFormatter(millions_formatter))
+        axA.set_xlabel("Amount $Millions")
+        axA.set_ylabel("Insider, Ticker")
+        axA.set_title(f"Top {n} Buyers in {start} → {end}")
+    else:
+        axes[0].set_title("No Buyers in period")
+        axes[0].axis("off")
 
     # RIGHT — SELLERS
-    axD = disposed.head(n).sort_values().plot.barh(
-        ax=axes[1], color="#ef5350"
-    )
-    axD.xaxis.set_major_formatter(mtick.FuncFormatter(millions_formatter))
-    axD.set_xlabel("Amount $Millions")
-    axD.set_ylabel("Insider, Ticker")
-    axD.set_title(f"Top {n} Sellers in {start} → {end}")
+    if not disposed.empty:
+        axD = disposed.head(n).sort_values().plot.barh(
+            ax=axes[1], color="#ef5350"
+        )
+        axD.xaxis.set_major_formatter(mtick.FuncFormatter(millions_formatter))
+        axD.set_xlabel("Amount $Millions")
+        axD.set_ylabel("Insider, Ticker")
+        axD.set_title(f"Top {n} Sellers in {start} → {end}")
+    else:
+        axes[1].set_title("No Sellers in period")
+        axes[1].axis("off")
 
     fig.tight_layout()
 

@@ -42,12 +42,17 @@ def companies_bs_in_period(df: pd.DataFrame, start, end):
 
     return acquired, disposed
 
-def companies_bs_in_period_by_reporter(df: pd.DataFrame, start, end):
+def companies_bs_in_period_by_reporter(df: pd.DataFrame, start, end, ticker=None):
     mask = (
         (df['period_of_report'] >= pd.to_datetime(start).tz_localize('UTC')) &
         (df['period_of_report'] <= pd.to_datetime(end).tz_localize('UTC'))
     )
-
+    # safe pattern
+    # Convert everything to UTC instead of localizing blindly
+    # start = pd.to_datetime(start, utc=True)
+    # end   = pd.to_datetime(end, utc=True)
+    if ticker is not None:
+        mask &= df['issuer_ticker'] == ticker
 
     acquired = (
         df[(df["acquired_disposed"] == "A") & mask]

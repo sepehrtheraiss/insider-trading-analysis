@@ -16,7 +16,7 @@ from cli.cli_handlers import (
 
 # Common options for plot commands
 COMMON_PLOT_OPTIONS = [
-    ("--ticker", {"default": "*", "help": "Ticker or * for all"}),
+    ("--ticker", {"default": None, "help": "Ticker or * for all"}),
     ("--start", {"required": True, "help": "Start date YYYY-MM-DD"}),
     ("--end", {"required": True, "help": "End date YYYY-MM-DD"}),
     ("--save", {"is_flag": True, "default": False, "help": "Save plot"}),

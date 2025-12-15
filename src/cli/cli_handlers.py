@@ -137,7 +137,7 @@ def handle_plot_n_companies_reporter(ticker, start, end, n, save, outpath, show)
     db = InsiderRepository()
     df = db.get_transactions(start, end)
 
-    acquired, disposed = companies_bs_in_period_by_reporter(df, start, end)
+    acquired, disposed = companies_bs_in_period_by_reporter(df, start, end, ticker)
 
     plot_n_most_companies_bs_by_reporter(
         acquired=acquired,
