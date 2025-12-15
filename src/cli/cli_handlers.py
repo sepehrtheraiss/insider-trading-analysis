@@ -1,4 +1,5 @@
 # business logic
+import re
 import pandas as pd
 import yfinance as yf
 from pathlib import Path
@@ -149,7 +150,7 @@ def handle_plot_n_companies_reporter(ticker, start, end, n, save, outpath, show)
         end=end,
     )
 
-def handle_plot_line_chart(ticker, start, end, save, outpath, show):
+def handle_plot_line_chart(ticker, reporter, start, end, save, outpath, show):
     db = InsiderRepository()
     df = db.get_transactions(start, end)
     #start_date = datetime.strptime(start, "%Y-%m-%d").date()
@@ -159,6 +160,17 @@ def handle_plot_line_chart(ticker, start, end, save, outpath, show):
     ticker_filter = (df["issuer_ticker"]==ticker) & \
     (df["period_of_report"].dt.date >=start_date) & \
     (df["period_of_report"].dt.date <=end_date)
+    def name_tokens(name: str) -> set[str]:
+        if not isinstance(name, str):
+            return set()
+        #removes punctuation, commas, dots, numbers
+        return set(re.findall(r"[a-z]+", name.casefold()))
+
+    if reporter is not None:
+        target_tokens = name_tokens(reporter)
+        ticker_filter &= df["reporter"].apply(
+            lambda x: target_tokens.issubset(name_tokens(x))
+        )
     ticker_acquired = df[ticker_filter].groupby("period_of_report").agg({
         "total_value": "sum",
         "acquired_disposed": "first"

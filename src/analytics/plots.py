@@ -257,16 +257,14 @@ def plot_line_chart(
     ax.set_title(f"{ticker} Daily Price Chart")
 
     total_value = df['total_value'].sum()
-    text_y_pos = (df['close'].max() + df['close'].min()) / 2
-    # Safe annotation index (use 10th point if exists, else use last point)
-    annot_idx = min(10, len(df.index) - 1)
-
-    ax.annotate(
-        'total_value amount: ' + "$ {:,.0f}".format(total_value),
-        xy=(df.index[annot_idx], text_y_pos), xycoords='data',
-        xytext=(-100, -100), textcoords='offset pixels',
+    ax.text(
+        0.01, 0.95,                          # top-left axes
+        f"Total Value: $ {total_value:,.0f}",
+        transform=ax.transAxes,
+        fontsize=14,
+        verticalalignment="top",
+        bbox=dict(boxstyle="round", facecolor="white", alpha=0.8)
     )
-
     plt.setp(plt.gca().get_xticklabels(), rotation = 0, ha='center')
 
     plt.tight_layout()

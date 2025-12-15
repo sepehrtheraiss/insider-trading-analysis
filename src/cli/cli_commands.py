@@ -85,7 +85,9 @@ COMMANDS = {
         "help": "Plot acquired/disposed line chart per ticker",
         # handler signature already has (ticker, start, end, save, outpath, show)
         # so COMMON_PLOT_OPTIONS is enough – no need to add a second --ticker
-        "options": COMMON_PLOT_OPTIONS,
+        "options": COMMON_PLOT_OPTIONS + [
+            ("--reporter", {"help": "buy/sold from reporter on ticker"}),
+        ],
     },
 
     "plot.sector_statistics": {
