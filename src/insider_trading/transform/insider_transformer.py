@@ -1,4 +1,5 @@
 import pandas as pd
+import numpy as np
 from .normalize_transactions import normalize_transactions
 
 class InsiderTransactionsTransformer:
@@ -103,12 +104,22 @@ class InsiderTransactionsTransformer:
             (df["shares"] != df["price_per_share"]) &
             ((df["price_per_share"] < 6000) | (df["shares"] == 1)) &
             (df["total_value"] > 0) &
+            # can happen with penny stocks
+            (df["total_value"] < 1_000_000_000) &
             (df["code"] != "M") &
             (~df["issuer_ticker"].isin(["NONE","N/A","NA"])) &
             (~df["issuer_cik"].astype("Int64").isin(ignore_ciks))
         )
-
-        return df[filter_all]
+        df = df[filter_all]
+        # Are they within ~1 order of magnitude?
+        # sometimes price_per_share ≈ shares / 1,000
+        # mask = (
+        #     (df["shares"] > 0) &
+        #     (df["price_per_share"] > 0) &
+        #     (np.abs(np.log10(df["shares"]) - np.log10(df["price_per_share"])) < 0.1)
+        # )
+        # df = df[mask]
+        return df
 
     # -----------------------------------------------------------
     def transform(self, raw: list[dict], staging_writer=None) -> pd.DataFrame:

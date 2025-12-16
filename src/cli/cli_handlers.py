@@ -62,6 +62,8 @@ def handle_build_dataset(raw_path: str):
     """force run pipeline on raw_path"""
     config = settings 
     config.test_mode_tx = True
+    config.test_mode_map = True
+    config.test_path_map = 'exchange_mapping.json'
     db = ETLDatabase()
     _path = Path("data/raw/"+raw_path)
     if _path.exists() and _path.is_dir():
@@ -70,6 +72,8 @@ def handle_build_dataset(raw_path: str):
         for name in f_names:
             config.test_path_tx = name
             InsiderTradingPipeline(config, db).run()
+            if config.test_mode_map: 
+                config.test_mode_map = False
     else:
         config.test_path_tx = raw_path
         InsiderTradingPipeline(config, db).run()
@@ -136,7 +140,6 @@ def handle_plot_n_companies(ticker, start, end, n, save, outpath, show):
 def handle_plot_n_companies_reporter(ticker, start, end, n, save, outpath, show):
     db = InsiderRepository()
     df = db.get_transactions(start, end)
-
     acquired, disposed = companies_bs_in_period_by_reporter(df, start, end, ticker)
 
     plot_n_most_companies_bs_by_reporter(

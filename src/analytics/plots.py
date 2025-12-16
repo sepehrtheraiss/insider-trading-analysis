@@ -309,7 +309,7 @@ def plot_sector_stats(
     ax.set_xticklabels([idx[0].strftime('%Y') for idx in unstacked.index])
     ax.figure.autofmt_xdate(rotation=0, ha='center')
     ax.set_xlabel("Year")
-    ax.set_ylabel("Amount $")
+    ax.set_ylabel("Amount $Millions")
     ax.set_title("Sector Statistics")
 
     plt.tight_layout()
