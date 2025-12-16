@@ -1,0 +1,7 @@
+docker exec -it insider_db bash
+psql -U insider -d insider_trading
+
+# drop entire schema
+DROP SCHEMA public CASCADE;
+CREATE SCHEMA public;
+

@@ -14,7 +14,7 @@ class Settings(BaseSettings):
     # -------------------------
     # Environment Variables
     # -------------------------
-    sec_api_key: str = Field(..., env="SEC_API_KEY")
+    sec_api_key: str = Field("", env="SEC_API_KEY")
     base_url: str = Field("https://api.sec-api.io", env="BASE_URL")
 
     # Database

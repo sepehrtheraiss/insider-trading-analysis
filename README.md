@@ -1,44 +1,75 @@
+# Insider Trading Analysis
 
-# Insider Trading Analysis (Python)
+Build a **local, queryable dataset of SEC insider trading filings** (Forms **3**, **4**, and **5**), enrich it with market metadata, and analyze/visualize insider behavior.
 
-Build a local dataset of SEC Forms 3/4/5 via SEC-API, clean & enrich it with exchange/sector information, and run basic analyses/plots.
+This project is **not** about prediction or trade automation. It’s **data engineering + exploratory analysis** of legally disclosed insider transactions.
 
-## Quickstart
+---
 
-1) **Python 3.10+** recommended
+## What This Project Does
 
-2) Install deps:
+At a high level, the project:
+
+1. Fetches insider trading filings from the SEC via an external API
+2. Normalizes and cleans raw filing data
+3. Enriches transactions with issuer metadata (exchange, sector, industry)
+4. Stores data in a PostgreSQL database
+5. Aggregates and visualizes insider activity (buy/sell value, reporters, sectors, time)
+
+---
+
+## Docs
+
+Setup, design, environment variables, DB access, and more:
+
+➡️ **[`docs/README.md`](docs/README.md)**
+
+---
+
+
+## Examples
+
+### Top insider activity by reporter
+
 ```bash
-pip install -r requirements.txt
+insider_cli plot n_most_companies_bs_by_reporter   --start "2022-01-01"   --end "2022-12-31"   --show
 ```
+![](assets/top_15_by_reporter_2022-01-01_2022-12-31.png)
 
-3) Set your **SEC-API key**:
+
+
+
+---
+
+### Deep dive TSLA trades
+
 ```bash
-export SEC_API_KEY="YOUR_KEY_HERE"
+insider_cli plot acquired_disposed_line_chart_ticker   --ticker TSLA   --start "2022-01-01"   --end "2022-12-31"   --show
 ```
+![](assets/TSLA_line_chart_2022-01-01_2022-12-31.png)
 
-4) Build a dataset (example: 2023-01-01 through 2025-01-01, all tickers):
+---
+
+### Zoom in Elon Musk trades
+
 ```bash
-python build_dataset.py --start 2023-01-01 --end 2025-01-01 -o out/insider_trades.csv
+insider_cli plot acquired_disposed_line_chart_ticker   --ticker TSLA   --reporter "Elon Musk"   --start "2022-01-01"   --end "2022-12-31"   --show
 ```
+![](assets/TSLA_line_chart_Elon_2022-01-01_2022-12-31.png)
 
-Filter to a ticker or two with Lucene query:
+---
+
+### Other insiders trading TSLA
+
 ```bash
-python build_dataset.py --query "issuer.tradingSymbol:TSLA OR issuer.tradingSymbol:AAPL" --start 2023-01-01 --end 2025-01-01 -o out/tsla_aapl.csv
+insider_cli plot n_most_companies_bs_by_reporter   --ticker TSLA   --start "2022-01-01"   --end "2022-12-31"   --show
 ```
+![](assets/top_15_by_reporter_TSLA_2022-01-01_2022-12-31.png)
 
-5) Summarize & plot:
+### Sector Stats
+
 ```bash
-python cli.py summary out/insider_trades.csv --outdir out
+insider_cli plot sector_statistics --start "2019-01-01" --end "2025-10-30" --show
 ```
-
-Outputs:
-- `out/by_code.png` – total $ value by transaction code (S, P, etc.)
-- `out/sector_year.png` – heatmap of sector × year dollar values
-- console tables for code summary and top reporters
-
-## Notes
-
-- Uses SEC-API's InsiderTradingApi for filings, and their Mapping API to attach exchange/sector/industry metadata.
-- Cleaning removes weird prices, keeps NYSE/NASDAQ by default.
-- Flags 10b5‑1 mentions if footnotes contain the string.
+![](assets/sector_stats_2019-01-01_2025-10-30.png)
+---
