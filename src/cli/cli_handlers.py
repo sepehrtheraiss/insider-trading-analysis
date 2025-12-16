@@ -192,6 +192,8 @@ def handle_plot_line_chart(ticker, reporter, start, end, save, outpath, show):
         save=save,
         outpath=outpath,
         show=show,
+        start=start,
+        end=end,
     )
 
 def handle_plot_sector_stats(ticker, start, end, save, outpath, show):
