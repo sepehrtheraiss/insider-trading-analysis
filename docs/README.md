@@ -67,7 +67,7 @@ source env/bin/activate
 pip install -r requirements.txt
 ```
 
-### 3) Install in editable mode (enables `insider_cli`)
+### 3) Install in editable mode (exposes src/ packages and enables insider_cli) 
 
 ```bash
 pip install -e .
