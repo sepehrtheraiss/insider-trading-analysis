@@ -106,6 +106,7 @@ class InsiderTransactionsTransformer:
             (df["total_value"] > 0) &
             # can happen with penny stocks
             (df["total_value"] < 1_000_000_000) &
+            ((df["shares"] * df["price_per_share"]) == df["total_value"]) &
             (df["code"] != "M") &
             (~df["issuer_ticker"].isin(["NONE","N/A","NA"])) &
             (~df["issuer_cik"].astype("Int64").isin(ignore_ciks))
