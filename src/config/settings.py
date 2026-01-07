@@ -16,6 +16,7 @@ class Settings(BaseSettings):
     # -------------------------
     sec_api_key: str = Field("", env="SEC_API_KEY")
     base_url: str = Field("https://api.sec-api.io", env="BASE_URL")
+    openai_api_key: str = Field("", env="OPENAI_API_KEY")
 
     # Database
     db_host: str = Field("localhost", env="DB_HOST")

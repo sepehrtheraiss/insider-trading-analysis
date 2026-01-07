@@ -12,6 +12,7 @@ from cli.cli_handlers import (
     handle_plot_n_companies_reporter,
     handle_plot_line_chart,
     handle_plot_sector_stats,
+    handle_answer_question_with_sql,
 )
 
 # Common options for plot commands
@@ -95,4 +96,17 @@ COMMANDS = {
         "help": "Plot sector statistics",
         "options": COMMON_PLOT_OPTIONS,
     },
+
+    # ─────────── SQL AI Agent ───────────
+    "sql.ask": {
+       "handler": handle_answer_question_with_sql,
+       "help": "Generate, validate, optimize, and run a SQL query from a natural-language question",
+       "options": [
+           ("--question", {"required": True, "type": str, "help": "Natural-language SQL question"}),
+           ("--pretty/--no-pretty", {"default": True, "help": "Pretty-print JSON output"}),
+           ("--output", {"default": None, "type": str, "help": "Write JSON output to a file"}),
+           ("--show-sql/--no-show-sql", {"default": True, "help": "Include SQL in output"}),
+           ("--show-explain/--no-show-explain", {"default": False, "help": "Include EXPLAIN text in output"}),
+       ],
+   },
 }

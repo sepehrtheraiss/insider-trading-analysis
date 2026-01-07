@@ -2,6 +2,9 @@
 import re
 import pandas as pd
 import yfinance as yf
+from typing import Optional
+import click
+import json
 from pathlib import Path
 from dateutil.parser import parse
 
@@ -18,6 +21,7 @@ from config.insider_trading_config import InsiderTradingConfig
 from config.settings import settings
 from db.etl_db import ETLDatabase
 from db.repository import InsiderRepository
+from db.sql_workflow import answer_question_with_sql
 from insider_trading.extract.sources.insider_api_source import InsiderApiSource
 from insider_trading.pipeline import InsiderTradingPipeline
 from utils.logger import Logger
@@ -212,3 +216,49 @@ def handle_plot_sector_stats(ticker, start, end, save, outpath, show):
         start=start,
         end=end,
     )
+
+
+def handle_answer_question_with_sql(
+    question: str,
+    pretty: bool,
+    output: Optional[str],
+    show_sql: bool,
+    show_explain: bool,
+) -> None:
+    """
+    question: str
+        Natural-language question to be translated into SQL and executed.
+    pretty: bool
+        Pretty-print JSON output.
+    output: Optional[str]
+        If provided, write result JSON to this path.
+    show_sql: bool
+        If true, include generated SQL in output.
+    show_explain: bool
+        If true, include EXPLAIN ANALYZE text in output (can be large).
+    """
+    result = answer_question_with_sql(question)
+
+    # Trim what we print unless user asked for it
+    payload = {
+        "question": result.get("question"),
+        "rows": result.get("rows", []),
+        "optimized": result.get("optimized", {}),
+    }
+    if show_sql:
+        payload["sql"] = result.get("sql")
+        # include final SQL if present in optimized
+        if isinstance(payload["optimized"], dict) and "improved_sql" in payload["optimized"]:
+            payload["final_sql"] = payload["optimized"]["improved_sql"]
+
+    if show_explain:
+        payload["explain"] = result.get("explain")
+
+    text = json.dumps(payload, indent=2 if pretty else None, default=str)
+
+    if output:
+        with open(output, "w", encoding="utf-8") as f:
+            f.write(text)
+        click.echo(f"Wrote output to: {output}")
+    else:
+        click.echo(text)

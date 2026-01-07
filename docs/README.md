@@ -100,6 +100,7 @@ insider_cli build-dataset --raw-path .
 
 ```env
 SEC_API_KEY=API_KEY
+OPENAI_API_KEY=API_KEY
 
 DB_HOST=localhost
 DB_PORT=5432
